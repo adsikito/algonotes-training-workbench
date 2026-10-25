@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {independentAC,validateEntry,safePath,escapeCSV} from '../lib/domain.ts';
+const e=(id:string,result:string,help:string)=>({id,kind:'submission',data:{problemId:'p',result,help},deleted:false,version:1,updated:'now'}) as any;
+assert.equal(independentAC([], [e('a','WA','独立'),e('b','AC','完整代码')], 'p'),false);
+assert.equal(independentAC([], [e('a','AC','独立')], 'p'),true);
+assert.equal(independentAC([], [e('a','AC','未知')], 'p'),false);
+assert.throws(()=>validateEntry({id:'bad',kind:'state',data:{progress:'WA',mastery:'已掌握'}}));
+assert.throws(()=>validateEntry({id:'../bad',kind:'note',data:{title:'x',body:'x'}}));
+assert.throws(()=>validateEntry({id:'large',kind:'note',data:{title:'x',body:'字'.repeat(200000)}}));
+assert.equal(safePath('../secret'),false);assert.equal(safePath('/secret'),false);assert.equal(safePath('files/file1'),true);
+assert.equal(escapeCSV('=1+2'),'"\'=1+2"');
+assert.equal(escapeCSV('a"b'),'"a""b"');
+console.log('11 domain assertions passed');

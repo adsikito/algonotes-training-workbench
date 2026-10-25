@@ -1,0 +1,2 @@
+import {actor,db,json,parseRow,failure} from '../../../lib/server';
+export async function GET(r:Request){try{const u=await actor(r);const id=new URL(r.url).searchParams.get('id');const rows=await db().prepare('SELECT * FROM revisions WHERE owner=? AND (id=? OR id=?) ORDER BY updated DESC LIMIT 100').bind(u.id,id,'archive:'+id).all();return json(rows.results.map(parseRow));}catch(e){return failure(e);}}

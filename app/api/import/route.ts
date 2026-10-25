@@ -1,0 +1,14 @@
+import {actor,checkOrigin,json,failure,hash,mutate,getEntry,allEntries} from '../../../lib/server';
+import {validateEntry} from '../../../lib/domain';
+export async function POST(r:Request){try{checkOrigin(r);const u=await actor(r);const x:any=await r.json();if(!Array.isArray(x.entries)||x.entries.length>200)throw new Error('导入最多200条');for(const e of x.entries){validateEntry(e);if(!['note','folder','knowledge','feedback','review'].includes(e.kind))throw new Error('仅支持笔记、文件夹、知识、反馈及复习记录');}
+ const batch=(await hash(JSON.stringify(x.entries))).slice(0,20);const map=new Map(x.entries.map((e:any)=>[e.id,'import-'+batch+'-'+e.id]));const remap=(v:any):any=>typeof v==='string'?(map.get(v)??v):Array.isArray(v)?v.map(remap):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).filter(([k])=>!['owner','ownerId','key'].includes(k)).map(([k,z])=>[k,remap(z)])):v;
+ const items=x.entries.map((e:any)=>({...e,id:map.get(e.id),data:remap(e.data)}));const status=[];for(const e of items){validateEntry(e);status.push({id:e.id,title:e.data.title||e.id,action:await getEntry(u.id,e.id)?'已有，跳过':'新增副本'});}
+ for(const e of items){for(const ref of [e.data.folderId,e.kind==='folder'?e.data.parentId:null])if(ref&&!items.some((p:any)=>p.kind==='folder'&&p.id===ref)){const target=await getEntry(u.id,ref);if(!target||target.kind!=='folder'||target.deleted)throw new Error('导入引用缺少文件夹：'+ref);}}
+ if(x.action==='preview')return json({batch,items:status});
+ if(x.action==='undo'){const all=await allEntries(u.id);let removed=0;const conflicts=[];for(const e of items){const old=all.find(z=>z.id===e.id);if(!old||old.deleted)continue;if(old.version!==1||all.some(z=>!z.deleted&&z.id!==e.id&&JSON.stringify(z.data).includes(e.id))){conflicts.push(e.id);continue;}await mutate(u.id,{...old,baseVersion:old.version,operationId:'undo-'+batch+':'+old.id,deleted:true});removed++;}return json({removed,conflicts});}
+ if(x.action!=='apply')throw new Error('未知导入动作');
+ // Folders first; a parent may precede children. Reject cyclic/invalid folders before any mutation.
+ const folders=items.filter((e:any)=>e.kind==='folder');for(const e of folders){let parent=e.data.parentId;const seen=new Set([e.id]);while(parent){if(seen.has(parent))throw new Error('导入文件夹有循环');seen.add(parent);const p=folders.find((f:any)=>f.id===parent);if(!p)break;parent=p.data.parentId;}}
+ let pending=[...folders];const sorted=[];while(pending.length){const index=pending.findIndex((e:any)=>!e.data.parentId||!pending.some((p:any)=>p.id===e.data.parentId));if(index<0)throw new Error('文件夹依赖错误');sorted.push(pending.splice(index,1)[0]);}
+ for(const e of [...sorted,...items.filter((e:any)=>e.kind!=='folder')]){if(!await getEntry(u.id,e.id))await mutate(u.id,{...e,baseVersion:0,operationId:'import-'+batch+':'+e.id});}
+ return json({batch,created:status.filter(e=>e.action==='新增副本').length,items:status});}catch(e){return failure(e);}}

@@ -1,0 +1,1 @@
+CREATE INDEX `owner_sync` ON `records` (`owner`,`updated`,`id`);

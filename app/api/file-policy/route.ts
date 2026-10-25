@@ -1,0 +1,3 @@
+import {fileCapability,FILE_LIMIT,BATCH_LIMIT,BATCH_BYTES} from '../../../lib/file-policy';
+import {actor,json,failure} from '../../../lib/server';
+export async function GET(r:Request){try{await actor(r);return json({singleFileBytes:256*1024*1024,legacySingleFileBytes:FILE_LIMIT,chunkBytes:8*1024*1024,batchFiles:BATCH_LIMIT,batchBytes:1024*1024*1024,accountBytes:1024*1024*1024,originals:'所有格式均按原件保存和授权下载，不运行文件',formats:['ppt','pptx','pdf','cpp','c','h','hpp','md','txt','doc','docx','xls','xlsx','png','jpg','zip','in','out','ans'].map(ext=>({extension:ext,...fileCapability('file.'+ext)})),textSearch:'新上传的文本与代码：文件<=2MiB时提取，索引<=200000字节；旧文件可重新上传为新版本建立索引',notAvailable:['Office转PDF','PDF文字提取','OCR','代码执行','后台读取本地磁盘']});}catch(e){return failure(e);}}

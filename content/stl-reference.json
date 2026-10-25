@@ -1,0 +1,2264 @@
+{
+  "items": [
+    {
+      "id": "stl-2-api-0",
+      "name": "push_back",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.push_back(x)",
+      "returns": "void；追加一个元素，size增加1",
+      "complexity": "末尾追加，void，均摊O(1)，扩容单次O(n)",
+      "boundary": "扩容时所有旧迭代器、指针和引用失效；未扩容时旧end失效。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v; v.push_back(8); v.push_back(3); show(v);\n}\n",
+      "exampleOutput": "8 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-1",
+      "name": "pop_back",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.pop_back()",
+      "returns": "void；删除末项，不返回被删的值",
+      "complexity": "删除末项，void，O(1)，要求非空",
+      "boundary": "必须非空；需要值先复制back()；被删元素及旧end失效。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\nvector<int> v{8,3}; int x=v.back(); v.pop_back(); cout<<x<<\" \"<<v.size()<<\"\\n\";\n}\n",
+      "exampleOutput": "3 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-2",
+      "name": "size / empty",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.size(); v.empty()",
+      "returns": "size_type（无符号元素数）；bool（是否为空）",
+      "complexity": "长度/是否为空，O(1)",
+      "boundary": "空容器可以调用；size不是最大合法下标。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\nvector<int> v; cout<<v.size()<<\" \"<<v.empty()<<\"\\n\"; v.push_back(4); cout<<v.size()<<\" \"<<v.empty()<<\"\\n\";\n}\n",
+      "exampleOutput": "0 1\n1 0\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-3",
+      "name": "resize",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.resize(n); v.resize(n,value)",
+      "returns": "void；改变元素数量，增长部分填value或值初始化",
+      "complexity": "调整已有元素数量，保留前缀，新int值初始化",
+      "boundary": "缩小不保证释放容量；增长若扩容则全部旧引用失效；被删元素引用失效。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v{4,8}; v.resize(4,7); show(v); v.resize(1); show(v);\n}\n",
+      "exampleOutput": "4 8 7 7\n4\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-4",
+      "name": "reserve",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.reserve(n)",
+      "returns": "void；保证至少可容纳n个元素，不创建元素",
+      "complexity": "仅预留容量，不改变size；扩容使旧位置失效",
+      "boundary": "n<=capacity不扩容；实际扩容则所有迭代器和引用失效；不能随后访问v[size()]。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\nvector<int> v{4}; v.reserve(20); cout<<v.size()<<\" \"<<(v.capacity()>=20)<<\"\\n\";\n}\n",
+      "exampleOutput": "1 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-5",
+      "name": "assign",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.assign(n,value); v.assign(first,last)",
+      "returns": "void；替换整个序列",
+      "complexity": "整体替换，不是追加",
+      "boundary": "不是追加；全部旧迭代器、指针和引用失效。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v{1,2}; v.assign(3,6); show(v);\n}\n",
+      "exampleOutput": "6 6 6\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-6",
+      "name": "at / operator[]",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.at(i); v[i]",
+      "returns": "T&（const对象为const T&），可以读写有效元素",
+      "complexity": "访问已有元素；at检查并抛异常，[]不检查",
+      "boundary": "i<size；at越界抛out_of_range；[]越界无检查，不会扩容。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <stdexcept>\nusing namespace std;\nint main(){\nvector<int> v{8,3}; v.at(1)=6; cout<<v[1]<<\"\\n\"; try{v.at(2);}catch(const out_of_range&){cout<<\"out\\n\";}\n}\n",
+      "exampleOutput": "6\nout\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-7",
+      "name": "erase / insert",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.insert(pos,x); v.erase(pos); v.erase(first,last)",
+      "returns": "iterator：插入元素位置 / 删除段之后的位置",
+      "complexity": "移动后续元素，vector通常O(n)",
+      "boundary": "pos属于本容器，erase单位置不能end；insert可end；扩容全部失效，否则插入/删除处及其后失效。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v{1,3}; v.insert(v.begin()+1,2); v.erase(v.begin()); show(v);\n}\n",
+      "exampleOutput": "2 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-2-api-8",
+      "name": "data / capacity",
+      "category": "vector",
+      "header": "<vector>",
+      "version": "C++11",
+      "signature": "v.data(); v.capacity()",
+      "returns": "T*（const为const T*）；size_type容量",
+      "complexity": "首元素地址/已分配容量；capacity不是可访问长度",
+      "boundary": "data不是新数组；只能访问size个有效对象；空容器不能解引用data；扩容后旧指针失效。",
+      "guideId": "stl-2",
+      "exampleCode": "#include <iostream>\n#include <vector>\nusing namespace std;\nint main(){\nvector<int> v{4,7}; cout<<v.data()[1]<<\" \"<<(v.capacity()>=v.size())<<\"\\n\";\n}\n",
+      "exampleOutput": "7 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/vector"
+      ]
+    },
+    {
+      "id": "stl-3-api-0",
+      "name": "find / rfind",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "s.find(part,pos); s.rfind(part,pos)",
+      "returns": "size_type：首个/最后匹配的下标；找不到为string::npos",
+      "complexity": "找子串，未找到返回npos",
+      "boundary": "先与npos比较再访问；空模式可匹配边界；pos是起查位置，不是出现次数。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\n#include <algorithm>\nusing namespace std;\nint main(){\nstring s=\"banana\"; cout<<s.find(\"ana\")<<\" \"<<s.rfind(\"ana\")<<\" \"<<(s.find(\"x\")==string::npos)<<\"\\n\";\n}\n",
+      "exampleOutput": "1 3 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-3-api-1",
+      "name": "substr",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "s.substr(pos,count)",
+      "returns": "string：复制至多count个字符；原串不改",
+      "complexity": "按起点与数量复制新串，pos==size合法",
+      "boundary": "第二参数是数量；pos==size返回空串，pos>size抛异常；复制k字符的时间和额外空间O(k)。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\nstring s=\"planet\"; cout<<s.substr(1,3)<<\" \"<<s.substr(s.size()).size()<<\"\\n\";\n}\n",
+      "exampleOutput": "lan 0\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-3-api-2",
+      "name": "compare",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "s.compare(other)",
+      "returns": "int：负、0、正，表示字典序小、等、大",
+      "complexity": "字典序比较返回负/零/正，不限于-1/0/1",
+      "boundary": "不保证返回恰好-1或1；字符串字典序不是一般整数数值大小；不修改原串。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\nstring s=\"apple\"; cout<<(s.compare(\"pear\")<0)<<\" \"<<(s.compare(\"apple\")==0)<<\"\\n\";\n}\n",
+      "exampleOutput": "1 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-3-api-3",
+      "name": "append / +=",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "s.append(other); s += other; s += ch",
+      "returns": "string&：返回被修改的原字符串",
+      "complexity": "追加字符或字符串，可能重新分配",
+      "boundary": "在末尾追加，可能使旧迭代器、引用、c_str指针失效；不是数组越界写入。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\nstring s=\"ab\"; s.append(\"cd\"); s+='!'; cout<<s<<\"\\n\";\n}\n",
+      "exampleOutput": "abcd!\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-3-api-4",
+      "name": "insert / erase / replace",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "s.insert(pos,text); s.erase(pos,count); s.replace(pos,count,text)",
+      "returns": "string&（本卡使用下标重载）",
+      "complexity": "按位置修改内容，注意有效区间",
+      "boundary": "pos<=size；pos>size抛异常；count可截至末尾；修改后不要继续使用旧位置引用。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\nstring s=\"abcd\"; s.insert(2,\"X\"); s.erase(0,1); s.replace(1,2,\"Q\"); cout<<s<<\"\\n\";\n}\n",
+      "exampleOutput": "bQd\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-3-api-5",
+      "name": "size / length",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "s.size(); s.length()",
+      "returns": "相同的size_type：字符单元数量",
+      "complexity": "字符元素数量，O(1)，不是中文字符数",
+      "boundary": "UTF-8中文可能占多个char，不是视觉字数；合法普通下标小于size。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\nstring s=\"abc\"; cout<<s.size()<<\" \"<<s.length()<<\"\\n\";\n}\n",
+      "exampleOutput": "3 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-3-api-6",
+      "name": "c_str",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "s.c_str()",
+      "returns": "const char*：以空字符结尾的只读字符数据",
+      "complexity": "只读零结尾字符指针；修改可能失效",
+      "boundary": "指针由string管理，不手动delete；修改串或销毁串后不能继续依赖旧指针；内部可含空字符。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\nusing namespace std;\nint main(){\nstring s=\"cat\"; const char* p=s.c_str(); cout<<p<<\" \"<<(p[s.size()]=='\\0')<<\"\\n\";\n}\n",
+      "exampleOutput": "cat 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-3-api-7",
+      "name": "getline",
+      "category": "string",
+      "header": "<string>",
+      "version": "C++11",
+      "signature": "getline(input,s); getline(input,s,delimiter)",
+      "returns": "istream&，可在if/while中检查流状态",
+      "complexity": "读取一行，注意前一次格式输入留下的换行",
+      "boundary": "读取并丢弃分隔符；不跳过开头空白；与>>混用时处理残留换行；失败看流状态。",
+      "guideId": "stl-3",
+      "exampleCode": "#include <iostream>\n#include <string>\n#include <sstream>\nusing namespace std;\nint main(){\nistringstream in(\"one two\\nthree\\n\"); string s; while(getline(in,s)) cout<<s<<\"\\n\";\n}\n",
+      "exampleOutput": "one two\nthree\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/basic.string"
+      ]
+    },
+    {
+      "id": "stl-4-api-0",
+      "name": "make_pair / pair",
+      "category": "pair / tuple",
+      "header": "<utility>、<tuple>",
+      "version": "C++11",
+      "signature": "pair<int,int> p(a,b); make_pair(a,b)",
+      "returns": "pair<T1,T2>；字段first、second",
+      "complexity": "组合两个值，first/second访问",
+      "boundary": "按first再second字典序比较；不是数组，不能p[0]；make_pair通常按值保存。",
+      "guideId": "stl-4",
+      "exampleCode": "#include <iostream>\n#include <utility>\nusing namespace std;\nint main(){\npair<int,int> p=make_pair(4,7); cout<<p.first<<\" \"<<p.second<<\"\\n\";\n}\n",
+      "exampleOutput": "4 7\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-4-api-1",
+      "name": "make_tuple / get",
+      "category": "pair / tuple",
+      "header": "<utility>、<tuple>",
+      "version": "C++11",
+      "signature": "make_tuple(a,b,c); get<I>(t)",
+      "returns": "tuple<...>；get返回对应元素引用（依值类别而变）",
+      "complexity": "组合多个值，get下标须编译期确定",
+      "boundary": "I是编译期常量；不能用运行时变量逐项get；引用元素寿命需另外保证。",
+      "guideId": "stl-4",
+      "exampleCode": "#include <iostream>\n#include <string>\n#include <tuple>\nusing namespace std;\nint main(){\ntuple<int,string> t=make_tuple(4,string(\"hi\")); get<0>(t)=8; cout<<get<0>(t)<<\" \"<<get<1>(t)<<\"\\n\";\n}\n",
+      "exampleOutput": "8 hi\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-4-api-2",
+      "name": "tie",
+      "category": "pair / tuple",
+      "header": "<utility>、<tuple>",
+      "version": "C++11",
+      "signature": "tie(a,b)=p; tie(a,b)=t",
+      "returns": "由引用组成的tuple；赋值写回被绑定变量",
+      "complexity": "把已有变量绑定到引用tuple，不能引用临时对象",
+      "boundary": "a、b必须已存在且活着；不要返回绑定局部变量的tie；ignore可丢弃某项。",
+      "guideId": "stl-4",
+      "exampleCode": "#include <iostream>\n#include <utility>\n#include <tuple>\nusing namespace std;\nint main(){\nint a=0,b=0; tie(a,b)=make_pair(3,9); cout<<a<<\" \"<<b<<\"\\n\";\n}\n",
+      "exampleOutput": "3 9\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-5-api-0",
+      "name": "sort",
+      "category": "排序与选择",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "sort(first,last); sort(first,last,comp)",
+      "returns": "void；原地按比较器排序，默认非降序",
+      "complexity": "随机访问区间，O(n log n)，不稳定",
+      "boundary": "随机访问迭代器，左闭右开；比较器严格弱序，不用>=；不保证相等元素稳定。",
+      "guideId": "stl-5",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v{3,1,3,2}; sort(v.begin(),v.end()); show(v);\n}\n",
+      "exampleOutput": "1 2 3 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-5-api-1",
+      "name": "stable_sort",
+      "category": "排序与选择",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "stable_sort(first,last,comp)",
+      "returns": "void；排序且保留等价元素原先相对顺序",
+      "complexity": "稳定排序，有足够额外空间O(n log n)，否则O(n log² n)",
+      "boundary": "随机访问迭代器；等价由比较器判断；不承诺额外空间O(1)。",
+      "guideId": "stl-5",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <utility>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<pair<int,int>> v{{2,0},{1,1},{2,2}}; stable_sort(v.begin(),v.end(),[](const pair<int,int>&a,const pair<int,int>&b){return a.first<b.first;}); for(const auto& p:v)cout<<p.second<<\" \"; cout<<\"\\n\";\n}\n",
+      "exampleOutput": "1 0 2 \n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-5-api-2",
+      "name": "min / max",
+      "category": "排序与选择",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "min(a,b); max(a,b)",
+      "returns": "常用两参数重载返回const T&；赋给普通变量时复制值",
+      "complexity": "两个同类型值比较，返回const引用，避免引用临时量",
+      "boundary": "a、b通常同类型；相等返回第一个；不要保存来自临时参数的返回引用；一次O(1)比较。",
+      "guideId": "stl-5",
+      "exampleCode": "#include <iostream>\n#include <algorithm>\nusing namespace std;\nint main(){\nint a=4,b=9; int lo=min(a,b),hi=max(a,b); cout<<lo<<\" \"<<hi<<\"\\n\";\n}\n",
+      "exampleOutput": "4 9\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-5-api-3",
+      "name": "min_element / max_element",
+      "category": "排序与选择",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "min_element(first,last); max_element(first,last)",
+      "returns": "iterator：首个最小 / 首个最大元素位置",
+      "complexity": "扫描返回首个极值位置，空区间返回last",
+      "boundary": "空区间返回last，不可解引用；不要求已排序；不会修改序列；扫描O(n)。",
+      "guideId": "stl-5",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{3,1,1,7}; cout<<(min_element(v.begin(),v.end())-v.begin())<<\" \"<<*max_element(v.begin(),v.end())<<\"\\n\";\n}\n",
+      "exampleOutput": "1 7\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-6-api-0",
+      "name": "unique",
+      "category": "去重与二分",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "unique(first,last); v.erase(newEnd,v.end())",
+      "returns": "unique返回逻辑新末尾；erase实际缩短vector",
+      "complexity": "只压缩相邻等价元素，返回新末尾，不缩容",
+      "boundary": "只合并相邻相等项，不自动排序；尾段内容不可当新结果；unique不改变容器size。",
+      "guideId": "stl-6",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v{1,1,2,2,3}; auto e=unique(v.begin(),v.end()); cout<<(e-v.begin())<<\" \"<<v.size()<<\"\\n\"; v.erase(e,v.end()); show(v);\n}\n",
+      "exampleOutput": "3 5\n1 2 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-6-api-1",
+      "name": "lower_bound / upper_bound",
+      "category": "去重与二分",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "lower_bound(first,last,x); upper_bound(first,last,x)",
+      "returns": "iterator：第一个>=x / 第一个>x的位置",
+      "complexity": "有序随机访问区间定位边界O(log n)，可能返回end",
+      "boundary": "本卡使用非降序序列和默认比较器；找不到返回last；位置不是元素值；随机访问O(log n)，一般前向迭代移动可线性。",
+      "guideId": "stl-6",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{1,3,3,8}; cout<<(lower_bound(v.begin(),v.end(),3)-v.begin())<<\" \"<<(upper_bound(v.begin(),v.end(),3)-v.begin())<<\"\\n\";\n}\n",
+      "exampleOutput": "1 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-6-api-2",
+      "name": "binary_search",
+      "category": "去重与二分",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "binary_search(first,last,x)",
+      "returns": "bool：是否存在与x等价的元素",
+      "complexity": "有序区间判断存在，返回bool",
+      "boundary": "按同一比较规则有序；不返回位置；随机访问序列对数比较，不修改原序列。",
+      "guideId": "stl-6",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{1,3,8}; cout<<binary_search(v.begin(),v.end(),3)<<\" \"<<binary_search(v.begin(),v.end(),4)<<\"\\n\";\n}\n",
+      "exampleOutput": "1 0\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-6-api-3",
+      "name": "equal_range",
+      "category": "去重与二分",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "equal_range(first,last,x)",
+      "returns": "pair<iterator,iterator>：等价元素的左闭右开区间",
+      "complexity": "返回匹配区间边界对；容器成员版更适合树容器",
+      "boundary": "有序且比较规则一致；无匹配时first==second；区间长度仅随机访问迭代器可直接相减。",
+      "guideId": "stl-6",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{1,3,3,8}; auto p=equal_range(v.begin(),v.end(),3); cout<<(p.first-v.begin())<<\" \"<<(p.second-v.begin())<<\"\\n\";\n}\n",
+      "exampleOutput": "1 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-7-api-0",
+      "name": "find / find_if",
+      "category": "扫描与填充",
+      "header": "<algorithm>、<numeric>",
+      "version": "C++11",
+      "signature": "find(first,last,x); find_if(first,last,pred)",
+      "returns": "iterator：首个匹配位置；无匹配为last",
+      "complexity": "找首个匹配位置，最坏O(n)，失败返回last",
+      "boundary": "不要求排序；不能解引用last；pred不修改被检查元素；最坏线性。",
+      "guideId": "stl-7",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{4,7,2}; cout<<*find(v.begin(),v.end(),7)<<\" \"<<*find_if(v.begin(),v.end(),[](int x){return x<3;})<<\"\\n\";\n}\n",
+      "exampleOutput": "7 2\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-7-api-1",
+      "name": "count / count_if",
+      "category": "扫描与填充",
+      "header": "<algorithm>、<numeric>",
+      "version": "C++11",
+      "signature": "count(first,last,x); count_if(first,last,pred)",
+      "returns": "iterator_traits<It>::difference_type：匹配数量",
+      "complexity": "扫描O(n)，返回difference_type数量",
+      "boundary": "整个区间扫描；空区间返回0；不修改原序列；不能当成有序查询O(log n)。",
+      "guideId": "stl-7",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{2,3,2,8}; cout<<count(v.begin(),v.end(),2)<<\" \"<<count_if(v.begin(),v.end(),[](int x){return x>2;})<<\"\\n\";\n}\n",
+      "exampleOutput": "2 2\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-7-api-2",
+      "name": "copy / copy_if",
+      "category": "扫描与填充",
+      "header": "<algorithm>、<numeric>",
+      "version": "C++11",
+      "signature": "copy(first,last,out); copy_if(first,last,out,pred)",
+      "returns": "OutputIt：写入完毕后的目标位置",
+      "complexity": "复制到已准备的目标或插入迭代器",
+      "boundary": "目标必须有足够已存在元素，或用back_inserter追加；不在不合法重叠区间使用；源不修改。",
+      "guideId": "stl-7",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <iterator>\n#include <algorithm>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v{1,2,3},a(3),b; copy(v.begin(),v.end(),a.begin()); copy_if(v.begin(),v.end(),back_inserter(b),[](int x){return x%2;}); show(a); show(b);\n}\n",
+      "exampleOutput": "1 2 3\n1 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-7-api-3",
+      "name": "fill / fill_n",
+      "category": "扫描与填充",
+      "header": "<algorithm>、<numeric>",
+      "version": "C++11",
+      "signature": "fill(first,last,x); fill_n(out,n,x)",
+      "returns": "fill返回void；fill_n返回写入后的迭代器",
+      "complexity": "覆盖已有目标元素，不扩容",
+      "boundary": "只修改已存在的目标元素；范围和容量必须合法；n是数量，不能写到未构造的reserve空间。",
+      "guideId": "stl-7",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v(4); fill(v.begin(),v.end(),7); fill_n(v.begin(),2,3); show(v);\n}\n",
+      "exampleOutput": "3 3 7 7\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-7-api-4",
+      "name": "all_of / any_of / none_of",
+      "category": "扫描与填充",
+      "header": "<algorithm>、<numeric>",
+      "version": "C++11",
+      "signature": "all_of(first,last,pred); any_of(...); none_of(...)",
+      "returns": "bool：全部 / 至少一个 / 没有元素满足条件",
+      "complexity": "条件全部/存在/均不满足；空区间依次true/false/true",
+      "boundary": "空区间依次为true、false、true；允许提前结束；不修改原序列。",
+      "guideId": "stl-7",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{2,4}; auto even=[](int x){return x%2==0;}; cout<<all_of(v.begin(),v.end(),even)<<\" \"<<any_of(v.begin(),v.end(),even)<<\" \"<<none_of(v.begin(),v.end(),even)<<\"\\n\";\n}\n",
+      "exampleOutput": "1 1 0\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-8-api-0",
+      "name": "push / emplace",
+      "category": "stack",
+      "header": "<stack>",
+      "version": "C++11",
+      "signature": "s.push(x); s.emplace(args...)",
+      "returns": "push为void；emplace在C++11为void，C++17起返回底层引用",
+      "complexity": "新增栈顶，默认底层deque下常数",
+      "boundary": "stack是适配器；默认deque。构造参数必须适配元素；不提供下标和迭代器。",
+      "guideId": "stl-8",
+      "exampleCode": "#include <iostream>\n#include <utility>\n#include <stack>\nusing namespace std;\nint main(){\nstack<pair<int,int>> s; s.push(make_pair(1,2)); s.emplace(3,4); cout<<s.top().first<<\" \"<<s.top().second<<\"\\n\";\n}\n",
+      "exampleOutput": "3 4\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-8-api-1",
+      "name": "top",
+      "category": "stack",
+      "header": "<stack>",
+      "version": "C++11",
+      "signature": "s.top()",
+      "returns": "T&；const stack返回const T&",
+      "complexity": "栈顶引用，要求非空",
+      "boundary": "必须非空；返回引用不是复制；弹出该元素后原引用不能继续用；读取O(1)。",
+      "guideId": "stl-8",
+      "exampleCode": "#include <iostream>\n#include <stack>\nusing namespace std;\nint main(){\nstack<int> s; s.push(4); s.top()=9; cout<<s.top()<<\"\\n\";\n}\n",
+      "exampleOutput": "9\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-8-api-2",
+      "name": "pop",
+      "category": "stack",
+      "header": "<stack>",
+      "version": "C++11",
+      "signature": "s.pop()",
+      "returns": "void；删除栈顶，不返回值",
+      "complexity": "删除栈顶，无返回值，要求非空",
+      "boundary": "必须非空；要保留值先复制top；删除对象的引用失效。",
+      "guideId": "stl-8",
+      "exampleCode": "#include <iostream>\n#include <stack>\nusing namespace std;\nint main(){\nstack<int> s; s.push(3); s.push(8); int x=s.top(); s.pop(); cout<<x<<\" \"<<s.top()<<\"\\n\";\n}\n",
+      "exampleOutput": "8 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-8-api-3",
+      "name": "empty / size",
+      "category": "stack",
+      "header": "<stack>",
+      "version": "C++11",
+      "signature": "s.empty(); s.size()",
+      "returns": "bool；size_type",
+      "complexity": "空值与长度检查，不提供普通遍历接口",
+      "boundary": "空栈也可调用；先empty再top/pop；默认底层常数时间。",
+      "guideId": "stl-8",
+      "exampleCode": "#include <iostream>\n#include <stack>\nusing namespace std;\nint main(){\nstack<int> s; cout<<s.empty()<<\" \"<<s.size()<<\"\\n\";\n}\n",
+      "exampleOutput": "1 0\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-9-api-0",
+      "name": "queue::push / pop",
+      "category": "queue / deque",
+      "header": "<queue>、<deque>",
+      "version": "C++11",
+      "signature": "q.push(x); q.pop()",
+      "returns": "均void；push追加队尾，pop删除队首",
+      "complexity": "队尾进入、队首删除；pop无返回",
+      "boundary": "pop前必须非空；不返回被删除的值；默认deque；先进先出。",
+      "guideId": "stl-9",
+      "exampleCode": "#include <iostream>\n#include <queue>\nusing namespace std;\nint main(){\nqueue<int> q; q.push(4); q.push(8); q.pop(); cout<<q.front()<<\"\\n\";\n}\n",
+      "exampleOutput": "8\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-9-api-1",
+      "name": "queue::front / back",
+      "category": "queue / deque",
+      "header": "<queue>、<deque>",
+      "version": "C++11",
+      "signature": "q.front(); q.back()",
+      "returns": "T&：队首 / 队尾；const对象为const T&",
+      "complexity": "队首/队尾引用，要求非空",
+      "boundary": "两者都要求非空；pop删除队首引用，不能在删除后继续使用。",
+      "guideId": "stl-9",
+      "exampleCode": "#include <iostream>\n#include <queue>\nusing namespace std;\nint main(){\nqueue<int> q; q.push(4); q.push(8); cout<<q.front()<<\" \"<<q.back()<<\"\\n\";\n}\n",
+      "exampleOutput": "4 8\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-9-api-2",
+      "name": "deque::push_front / push_back",
+      "category": "queue / deque",
+      "header": "<queue>、<deque>",
+      "version": "C++11",
+      "signature": "d.push_front(x); d.push_back(x)",
+      "returns": "void；在deque两端插入",
+      "complexity": "两端新增，常数时间",
+      "boundary": "两端插入使迭代器失效，但不使对已有元素的引用失效；不要套vector连续存储假设。",
+      "guideId": "stl-9",
+      "exampleCode": "#include <iostream>\n#include <deque>\nusing namespace std;\nvoid show(const deque<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\ndeque<int> d{4}; d.push_front(2); d.push_back(8); show(d);\n}\n",
+      "exampleOutput": "2 4 8\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-9-api-3",
+      "name": "deque::pop_front / pop_back",
+      "category": "queue / deque",
+      "header": "<queue>、<deque>",
+      "version": "C++11",
+      "signature": "d.pop_front(); d.pop_back()",
+      "returns": "void；删除deque对应端元素",
+      "complexity": "两端删除，要求非空",
+      "boundary": "必须非空；删除元素引用失效；边界迭代器规则随端点而异，删除后重新取得迭代器。",
+      "guideId": "stl-9",
+      "exampleCode": "#include <iostream>\n#include <deque>\nusing namespace std;\nvoid show(const deque<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\ndeque<int> d{2,4,8}; d.pop_front(); d.pop_back(); show(d);\n}\n",
+      "exampleOutput": "4\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-9-api-4",
+      "name": "deque::operator[]",
+      "category": "queue / deque",
+      "header": "<queue>、<deque>",
+      "version": "C++11",
+      "signature": "d[i]; d.at(i)",
+      "returns": "T&；const对象为const T&",
+      "complexity": "随机访问O(1)，内存不保证整体连续",
+      "boundary": "i<size；at越界抛异常，[]无检查；deque支持O(1)随机访问但整体不保证连续。",
+      "guideId": "stl-9",
+      "exampleCode": "#include <iostream>\n#include <deque>\nusing namespace std;\nint main(){\ndeque<int> d{2,4}; d[1]=9; cout<<d.at(1)<<\"\\n\";\n}\n",
+      "exampleOutput": "9\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-10-api-0",
+      "name": "top",
+      "category": "priority_queue",
+      "header": "<queue>、<functional>",
+      "version": "C++11",
+      "signature": "pq.top()",
+      "returns": "const T&：当前优先级最高元素",
+      "complexity": "默认最大元素的const引用，O(1)，非空",
+      "boundary": "必须非空；不能通过top修改堆顶；默认less形成最大堆；读取O(1)。",
+      "guideId": "stl-10",
+      "exampleCode": "#include <iostream>\n#include <queue>\nusing namespace std;\nint main(){\npriority_queue<int> q; q.push(4); q.push(9); cout<<q.top()<<\"\\n\";\n}\n",
+      "exampleOutput": "9\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-10-api-1",
+      "name": "push / emplace",
+      "category": "priority_queue",
+      "header": "<queue>、<functional>",
+      "version": "C++11",
+      "signature": "pq.push(x); pq.emplace(args...)",
+      "returns": "均void；插入后恢复堆序",
+      "complexity": "堆维护O(log n)，底层扩容另计",
+      "boundary": "比较器要严格弱序；底层vector扩容可能搬移全部元素，引用不要跨修改保存。",
+      "guideId": "stl-10",
+      "exampleCode": "#include <iostream>\n#include <queue>\nusing namespace std;\nint main(){\npriority_queue<int> q; q.push(4); q.emplace(7); cout<<q.top()<<\" \"<<q.size()<<\"\\n\";\n}\n",
+      "exampleOutput": "7 2\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-10-api-2",
+      "name": "pop",
+      "category": "priority_queue",
+      "header": "<queue>、<functional>",
+      "version": "C++11",
+      "signature": "pq.pop()",
+      "returns": "void；删除当前堆顶",
+      "complexity": "删除优先元素，O(log n)，无返回值",
+      "boundary": "必须非空；先top复制再pop；O(log n)比较，默认vector弹出尾项O(1)。",
+      "guideId": "stl-10",
+      "exampleCode": "#include <iostream>\n#include <queue>\nusing namespace std;\nint main(){\npriority_queue<int> q; q.push(4); q.push(9); q.pop(); cout<<q.top()<<\"\\n\";\n}\n",
+      "exampleOutput": "4\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-10-api-3",
+      "name": "greater比较器",
+      "category": "priority_queue",
+      "header": "<queue>、<functional>",
+      "version": "C++11",
+      "signature": "priority_queue<int,vector<int>,greater<int>> q",
+      "returns": "类型声明：建立最小堆；greater<int>()比较返回bool",
+      "complexity": "建立最小堆；自定义比较必须严格弱序",
+      "boundary": "需要<queue>、<vector>、<functional>；比较方向与“谁先弹出”要区分。",
+      "guideId": "stl-10",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <queue>\n#include <functional>\nusing namespace std;\nint main(){\npriority_queue<int,vector<int>,greater<int>> q; q.push(8); q.push(3); cout<<q.top()<<\"\\n\";\n}\n",
+      "exampleOutput": "3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-11-api-0",
+      "name": "map::find / count",
+      "category": "map / unordered_map",
+      "header": "<map>、<unordered_map>",
+      "version": "C++11",
+      "signature": "m.find(key); m.count(key)",
+      "returns": "map::iterator；size_type（map为0或1）",
+      "complexity": "按键查找O(log n)，不新增键",
+      "boundary": "find未命中为end，不能解引用；查找不会插入；map查找O(log n)。",
+      "guideId": "stl-11",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <algorithm>\nusing namespace std;\nint main(){\nmap<int,int> m{{2,8}}; cout<<(m.find(3)==m.end())<<\" \"<<m.count(2)<<\" \"<<m.size()<<\"\\n\";\n}\n",
+      "exampleOutput": "1 1 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-11-api-1",
+      "name": "map::operator[]",
+      "category": "map / unordered_map",
+      "header": "<map>、<unordered_map>",
+      "version": "C++11",
+      "signature": "m[key]",
+      "returns": "mapped_type&；键不存在时插入值初始化的值",
+      "complexity": "缺失键会插入默认值，查询时慎用",
+      "boundary": "map<int,int>缺键默认0；查询也可能新增键；不希望插入时用find或at。",
+      "guideId": "stl-11",
+      "exampleCode": "#include <iostream>\n#include <string>\n#include <map>\nusing namespace std;\nint main(){\nmap<string,int> m; ++m[\"cat\"]; cout<<m[\"cat\"]<<\" \"<<m[\"dog\"]<<\" \"<<m.size()<<\"\\n\";\n}\n",
+      "exampleOutput": "1 0 2\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-11-api-2",
+      "name": "map::lower_bound / upper_bound",
+      "category": "map / unordered_map",
+      "header": "<map>、<unordered_map>",
+      "version": "C++11",
+      "signature": "m.lower_bound(key); m.upper_bound(key)",
+      "returns": "iterator：按比较器首个不小于 / 大于key的键",
+      "complexity": "树容器成员查询O(log n)",
+      "boundary": "成员函数O(log n)，不能用返回end的迭代器；不要用通用lower_bound在树迭代器上期待O(log n)移动。",
+      "guideId": "stl-11",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <algorithm>\nusing namespace std;\nint main(){\nmap<int,int> m{{2,20},{5,50}}; cout<<m.lower_bound(3)->first<<\" \"<<m.upper_bound(2)->first<<\"\\n\";\n}\n",
+      "exampleOutput": "5 5\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-11-api-3",
+      "name": "unordered_map::find",
+      "category": "map / unordered_map",
+      "header": "<map>、<unordered_map>",
+      "version": "C++11",
+      "signature": "u.find(key)",
+      "returns": "unordered_map::iterator；未命中为end",
+      "complexity": "平均O(1)，最坏O(n)，不支持有序边界",
+      "boundary": "平均O(1)，最坏O(n)；没有有序上下界；rehash使迭代器失效，但不使已有元素引用失效。",
+      "guideId": "stl-11",
+      "exampleCode": "#include <iostream>\n#include <unordered_map>\n#include <algorithm>\nusing namespace std;\nint main(){\nunordered_map<int,int> u{{2,8}}; cout<<(u.find(3)==u.end())<<\" \"<<u.find(2)->second<<\"\\n\";\n}\n",
+      "exampleOutput": "1 8\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-12-api-0",
+      "name": "insert / emplace",
+      "category": "set / multiset",
+      "header": "<set>",
+      "version": "C++11",
+      "signature": "s.insert(x); s.emplace(args...)",
+      "returns": "set返回pair<iterator,bool>；multiset返回iterator",
+      "complexity": "set去重，multiset保留同键；O(log n)",
+      "boundary": "set去重，multiset允许重复；插入不使已有迭代器/引用失效；key不可通过迭代器修改。",
+      "guideId": "stl-12",
+      "exampleCode": "#include <iostream>\n#include <set>\nusing namespace std;\nint main(){\nset<int> s; auto a=s.insert(4); auto b=s.emplace(4); cout<<a.second<<\" \"<<b.second<<\" \"<<s.size()<<\"\\n\";\n}\n",
+      "exampleOutput": "1 0 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-12-api-1",
+      "name": "find / lower_bound",
+      "category": "set / multiset",
+      "header": "<set>",
+      "version": "C++11",
+      "signature": "s.find(key); s.lower_bound(key)",
+      "returns": "iterator：相等键 / 首个不小于键",
+      "complexity": "按比较器定位，成员O(log n)",
+      "boundary": "未命中或无边界为end；有序树查询O(log n)，不能解引用end。",
+      "guideId": "stl-12",
+      "exampleCode": "#include <iostream>\n#include <set>\n#include <algorithm>\nusing namespace std;\nint main(){\nset<int> s{2,5}; cout<<(s.find(3)==s.end())<<\" \"<<*s.lower_bound(3)<<\"\\n\";\n}\n",
+      "exampleOutput": "1 5\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-12-api-2",
+      "name": "erase(key) / erase(it)",
+      "category": "set / multiset",
+      "header": "<set>",
+      "version": "C++11",
+      "signature": "s.erase(key); s.erase(it)",
+      "returns": "key重载返回删除数量；iterator重载返回下一个iterator",
+      "complexity": "按键删全部同键/按位置删一个，勿解引用end",
+      "boundary": "multiset.erase(key)删所有等价键，erase(it)只删一个；it必须可解引用；仅删掉的元素引用失效。",
+      "guideId": "stl-12",
+      "exampleCode": "#include <iostream>\n#include <set>\n#include <algorithm>\nusing namespace std;\nint main(){\nmultiset<int> s{2,2,3}; s.erase(s.find(2)); cout<<s.count(2)<<\" \"<<s.erase(2)<<\" \"<<s.size()<<\"\\n\";\n}\n",
+      "exampleOutput": "1 1 1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-13-api-0",
+      "name": "array::fill / at",
+      "category": "array / list / forward_list",
+      "header": "<array>、<list>、<forward_list>",
+      "version": "C++11",
+      "signature": "a.fill(value); a.at(i)",
+      "returns": "fill返回void；at返回T&，const为const T&",
+      "complexity": "固定长度数组填充或检查访问",
+      "boundary": "array长度编译期固定；fill覆盖全部元素；at越界抛异常；array<T,0>不能访问元素。",
+      "guideId": "stl-13",
+      "exampleCode": "#include <iostream>\n#include <array>\n#include <algorithm>\nusing namespace std;\nvoid show(const array<int,3>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\narray<int,3> a{}; a.fill(4); a.at(1)=8; show(a);\n}\n",
+      "exampleOutput": "4 8 4\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-13-api-1",
+      "name": "list::splice",
+      "category": "array / list / forward_list",
+      "header": "<array>、<list>、<forward_list>",
+      "version": "C++11",
+      "signature": "lst.splice(pos,other); lst.splice(pos,other,it)",
+      "returns": "void；把节点转移至pos之前",
+      "complexity": "兼容分配器间转移节点；整表/单节点O(1)，跨表区间可O(n)",
+      "boundary": "两list分配器必须相等；迭代器仍指向原元素但元素已属目标容器；不同重载复杂度不同。",
+      "guideId": "stl-13",
+      "exampleCode": "#include <iostream>\n#include <list>\n#include <iterator>\nusing namespace std;\nvoid show(const list<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nlist<int> a{1,4},b{2,3}; a.splice(next(a.begin()),b); show(a); cout<<b.empty()<<\"\\n\";\n}\n",
+      "exampleOutput": "1 2 3 4\n1\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-13-api-2",
+      "name": "list::sort / unique",
+      "category": "array / list / forward_list",
+      "header": "<array>、<list>、<forward_list>",
+      "version": "C++11",
+      "signature": "lst.sort(); lst.unique()",
+      "returns": "C++11中均void；成员排序、删除相邻重复",
+      "complexity": "链表成员排序/相邻去重，不用std::sort",
+      "boundary": "list不支持std::sort所需随机访问；sort稳定O(n log n)，unique线性；只有相邻重复才合并。",
+      "guideId": "stl-13",
+      "exampleCode": "#include <iostream>\n#include <list>\n#include <algorithm>\nusing namespace std;\nvoid show(const list<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nlist<int> a{3,1,1,2}; a.sort(); a.unique(); show(a);\n}\n",
+      "exampleOutput": "1 2 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-13-api-3",
+      "name": "forward_list::before_begin",
+      "category": "array / list / forward_list",
+      "header": "<array>、<list>、<forward_list>",
+      "version": "C++11",
+      "signature": "f.before_begin()",
+      "returns": "iterator：首元素之前的位置",
+      "complexity": "首节点前的位置，不可解引用",
+      "boundary": "这是插入/删除首元素所需位置，不指向元素，不可解引用；空表before_begin也合法。",
+      "guideId": "stl-13",
+      "exampleCode": "#include <iostream>\n#include <forward_list>\nusing namespace std;\nvoid show(const forward_list<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nforward_list<int> f{2}; f.insert_after(f.before_begin(),1); show(f);\n}\n",
+      "exampleOutput": "1 2\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-13-api-4",
+      "name": "insert_after / erase_after",
+      "category": "array / list / forward_list",
+      "header": "<array>、<list>、<forward_list>",
+      "version": "C++11",
+      "signature": "f.insert_after(pos,x); f.erase_after(pos)",
+      "returns": "iterator：插入元素 / 删除元素之后的位置",
+      "complexity": "在已知前驱后插入/删除，使用有效前驱",
+      "boundary": "insert_after不能end；erase_after要求pos后存在元素；仅被删除元素的迭代器和引用失效。",
+      "guideId": "stl-13",
+      "exampleCode": "#include <iostream>\n#include <forward_list>\nusing namespace std;\nvoid show(const forward_list<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nforward_list<int> f{1,3}; auto p=f.insert_after(f.begin(),2); f.erase_after(p); show(f);\n}\n",
+      "exampleOutput": "1 2\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-14-api-0",
+      "name": "next_permutation / prev_permutation",
+      "category": "排列与部分排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "next_permutation(first,last); prev_permutation(first,last)",
+      "returns": "bool：是否得到下一个/上一个字典序排列",
+      "complexity": "下/上一个字典序排列，bool表示是否找到；末端回绕",
+      "boundary": "双向迭代器；到末尾返回false并回到反向极值排列；要枚举全部不同排列需先按对应方向排序。",
+      "guideId": "stl-14",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nvoid show(const vector<int>& c){\n    bool first=true;\n    for(int x:c){ // C++11：依次读取每个元素\n        if(!first)cout<<\" \"; first=false; cout<<x;\n    }\n    cout<<\"\\n\";\n}\nint main(){\nvector<int> v{1,2,3}; cout<<next_permutation(v.begin(),v.end())<<\"\\n\"; show(v); prev_permutation(v.begin(),v.end()); show(v);\n}\n",
+      "exampleOutput": "1\n1 3 2\n1 2 3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-14-api-1",
+      "name": "partial_sort",
+      "category": "排列与部分排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "partial_sort(first,middle,last)",
+      "returns": "void；最小的k=middle-first项已排序放前面",
+      "complexity": "前k项排序，O(n log k)，不保证后部有序",
+      "boundary": "随机访问，first<=middle<=last；后半部分未排序；一般O(n log k)比较，k=0为空前缀。",
+      "guideId": "stl-14",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{5,1,4,2,3}; partial_sort(v.begin(),v.begin()+2,v.end()); cout<<v[0]<<\" \"<<v[1]<<\"\\n\";\n}\n",
+      "exampleOutput": "1 2\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-14-api-2",
+      "name": "nth_element",
+      "category": "排列与部分排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "nth_element(first,nth,last)",
+      "returns": "void；nth为完整排序后对应值，两侧满足分割关系",
+      "complexity": "第k位置与全排序同值，平均O(n)，左右各自不保证有序",
+      "boundary": "随机访问，nth可last；两侧内部没有排序保证；通常写平均O(n)；不能拿它当完整sort。",
+      "guideId": "stl-14",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nusing namespace std;\nint main(){\nvector<int> v{5,1,4,2,3}; nth_element(v.begin(),v.begin()+2,v.end()); cout<<v[2]<<\"\\n\";\n}\n",
+      "exampleOutput": "3\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-15-api-0",
+      "name": "set / reset / flip",
+      "category": "bitset",
+      "header": "<bitset>",
+      "version": "C++11",
+      "signature": "b.set(); b.set(pos,value); b.reset(); b.reset(pos); b.flip(); b.flip(pos)",
+      "returns": "bitset<N>&：返回修改后的自身",
+      "complexity": "置1/清0/翻转，可作用整体或指定合法位置",
+      "boundary": "pos<N；pos版本越界抛out_of_range；整数位0是最低位；to_string最左是最高位。",
+      "guideId": "stl-15",
+      "exampleCode": "#include <iostream>\n#include <set>\n#include <bitset>\nusing namespace std;\nint main(){\nbitset<4> b; b.set(1); b.flip(0); b.reset(1); cout<<b<<\"\\n\";\n}\n",
+      "exampleOutput": "0001\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-15-api-1",
+      "name": "test / operator[]",
+      "category": "bitset",
+      "header": "<bitset>",
+      "version": "C++11",
+      "signature": "b.test(pos); b[pos]",
+      "returns": "test返回bool；非const []返回代理引用，const []返回bool",
+      "complexity": "test检查范围；[]要求合法下标",
+      "boundary": "pos<N；test越界抛异常；[]不提供同样检查；代理引用不等同bool&。",
+      "guideId": "stl-15",
+      "exampleCode": "#include <iostream>\n#include <bitset>\nusing namespace std;\nint main(){\nbitset<4> b; b[2]=true; cout<<b.test(2)<<\" \"<<b[0]<<\"\\n\";\n}\n",
+      "exampleOutput": "1 0\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-15-api-2",
+      "name": "count / any / all / none",
+      "category": "bitset",
+      "header": "<bitset>",
+      "version": "C++11",
+      "signature": "b.count(); b.any(); b.all(); b.none()",
+      "returns": "size_t：1的个数；其余为bool",
+      "complexity": "1的数量及布尔判定，成本取决于位数/实现",
+      "boundary": "不会修改位；bitset<0>.all/none为true、any为false；复杂度与N/实现字长相关，不保证所有N下O(1)。",
+      "guideId": "stl-15",
+      "exampleCode": "#include <iostream>\n#include <string>\n#include <bitset>\n#include <algorithm>\nusing namespace std;\nint main(){\nbitset<4> b(string(\"0101\")); cout<<b.count()<<\" \"<<b.any()<<\" \"<<b.all()<<\" \"<<b.none()<<\"\\n\";\n}\n",
+      "exampleOutput": "2 1 0 0\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-15-api-3",
+      "name": "to_string / to_ullong",
+      "category": "bitset",
+      "header": "<bitset>",
+      "version": "C++11",
+      "signature": "b.to_string(); b.to_ullong()",
+      "returns": "string；unsigned long long",
+      "complexity": "转字符串或整数，整数不能表示时抛overflow_error",
+      "boundary": "字符串从高位到低位；若数值无法放入unsigned long long，to_ullong抛overflow_error；N大不一定溢出，取决于置位位置。",
+      "guideId": "stl-15",
+      "exampleCode": "#include <iostream>\n#include <bitset>\nusing namespace std;\nint main(){\nbitset<4> b(9); cout<<b.to_string()<<\" \"<<b.to_ullong()<<\"\\n\";\n}\n",
+      "exampleOutput": "1001 9\n",
+      "exampleScope": "本接口组的独立教学例；不是正式题解",
+      "exercise": "先预测输出，再改变一个输入值或合法边界并运行核对；不增加完整题目。",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-iterators-api-0",
+      "name": "advance",
+      "category": "迭代器与输出适配：位置、距离和追加",
+      "header": "<iterator>",
+      "version": "C++11",
+      "signature": "advance(it,n)",
+      "returns": "void，修改it",
+      "complexity": "随机访问O(1)，其他O(|n|)",
+      "boundary": "负n要求双向迭代器；不能越界",
+      "guideId": "stl-extra-iterators",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <iterator>\n#include <algorithm>\nint main() {\n    std::vector<int> v{2,4,6}, out;\n    std::vector<int>::iterator it=v.begin();\n    std::advance(it,1);\n    std::cout<<*it<<' '<<*std::prev(v.end())<<' '<<std::distance(v.begin(),v.end())<<' '<<*v.rbegin()<<'\\n';\n    std::copy(v.begin(),v.end(),std::back_inserter(out));\n    for(std::size_t i=0;i<out.size();++i)std::cout<<(i?\" \":\"\")<<out[i];\n    std::cout<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4 6 3 6\n2 4 6\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-iterators-api-1",
+      "name": "next / prev",
+      "category": "迭代器与输出适配：位置、距离和追加",
+      "header": "<iterator>",
+      "version": "C++11",
+      "signature": "next(it,n) / prev(it,n)",
+      "returns": "新迭代器，原it不变",
+      "complexity": "随机访问O(1)，其他O(|n|)",
+      "boundary": "prev要求双向；不要对begin继续向前",
+      "guideId": "stl-extra-iterators",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <iterator>\n#include <algorithm>\nint main() {\n    std::vector<int> v{2,4,6}, out;\n    std::vector<int>::iterator it=v.begin();\n    std::advance(it,1);\n    std::cout<<*it<<' '<<*std::prev(v.end())<<' '<<std::distance(v.begin(),v.end())<<' '<<*v.rbegin()<<'\\n';\n    std::copy(v.begin(),v.end(),std::back_inserter(out));\n    for(std::size_t i=0;i<out.size();++i)std::cout<<(i?\" \":\"\")<<out[i];\n    std::cout<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4 6 3 6\n2 4 6\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-iterators-api-2",
+      "name": "distance",
+      "category": "迭代器与输出适配：位置、距离和追加",
+      "header": "<iterator>",
+      "version": "C++11",
+      "signature": "distance(first,last)",
+      "returns": "有符号difference_type",
+      "complexity": "随机访问O(1)，其他O(n)",
+      "boundary": "位置须可达；list上不是常数时间",
+      "guideId": "stl-extra-iterators",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <iterator>\n#include <algorithm>\nint main() {\n    std::vector<int> v{2,4,6}, out;\n    std::vector<int>::iterator it=v.begin();\n    std::advance(it,1);\n    std::cout<<*it<<' '<<*std::prev(v.end())<<' '<<std::distance(v.begin(),v.end())<<' '<<*v.rbegin()<<'\\n';\n    std::copy(v.begin(),v.end(),std::back_inserter(out));\n    for(std::size_t i=0;i<out.size();++i)std::cout<<(i?\" \":\"\")<<out[i];\n    std::cout<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4 6 3 6\n2 4 6\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-iterators-api-3",
+      "name": "rbegin / rend",
+      "category": "迭代器与输出适配：位置、距离和追加",
+      "header": "<iterator>",
+      "version": "C++11",
+      "signature": "v.rbegin() / v.rend()",
+      "returns": "反向迭代器",
+      "complexity": "O(1)",
+      "boundary": "rend不能读；反向遍历与普通下标不同",
+      "guideId": "stl-extra-iterators",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <iterator>\n#include <algorithm>\nint main() {\n    std::vector<int> v{2,4,6}, out;\n    std::vector<int>::iterator it=v.begin();\n    std::advance(it,1);\n    std::cout<<*it<<' '<<*std::prev(v.end())<<' '<<std::distance(v.begin(),v.end())<<' '<<*v.rbegin()<<'\\n';\n    std::copy(v.begin(),v.end(),std::back_inserter(out));\n    for(std::size_t i=0;i<out.size();++i)std::cout<<(i?\" \":\"\")<<out[i];\n    std::cout<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4 6 3 6\n2 4 6\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-iterators-api-4",
+      "name": "back_inserter",
+      "category": "迭代器与输出适配：位置、距离和追加",
+      "header": "<iterator>",
+      "version": "C++11",
+      "signature": "back_inserter(v)",
+      "returns": "输出迭代器",
+      "complexity": "每次写入调用push_back",
+      "boundary": "目标需支持push_back；与预留容量reserve不同",
+      "guideId": "stl-extra-iterators",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <iterator>\n#include <algorithm>\nint main() {\n    std::vector<int> v{2,4,6}, out;\n    std::vector<int>::iterator it=v.begin();\n    std::advance(it,1);\n    std::cout<<*it<<' '<<*std::prev(v.end())<<' '<<std::distance(v.begin(),v.end())<<' '<<*v.rbegin()<<'\\n';\n    std::copy(v.begin(),v.end(),std::back_inserter(out));\n    for(std::size_t i=0;i<out.size();++i)std::cout<<(i?\" \":\"\")<<out[i];\n    std::cout<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4 6 3 6\n2 4 6\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-multi-api-0",
+      "name": "multimap::insert",
+      "category": "multimap与重复键：数量、范围和删除",
+      "header": "<map>、<set>",
+      "version": "C++11",
+      "signature": "m.insert(make_pair(k,v))",
+      "returns": "新元素迭代器",
+      "complexity": "O(log n)",
+      "boundary": "同键不覆盖，multimap没有[]",
+      "guideId": "stl-extra-multi",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <set>\n#include <string>\nint main(){\n std::multimap<int,std::string> m;\n m.insert(std::make_pair(2,\"b\"));m.insert(std::make_pair(2,\"c\"));m.insert(std::make_pair(1,\"a\"));\n std::pair<std::multimap<int,std::string>::iterator,std::multimap<int,std::string>::iterator> range=m.equal_range(2);\n int count=0;for(std::multimap<int,std::string>::iterator it=range.first;it!=range.second;++it)++count;\n std::cout<<count<<' '<<m.count(2)<<'\\n';\n std::cout<<m.erase(2)<<' '<<m.size()<<'\\n';\n std::multiset<int> s{1,1,2};std::multiset<int>::iterator it=s.find(1);\n if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(1)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 2\n2 1\n2 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-multi-api-1",
+      "name": "equal_range",
+      "category": "multimap与重复键：数量、范围和删除",
+      "header": "<map>、<set>",
+      "version": "C++11",
+      "signature": "m.equal_range(k)",
+      "returns": "pair<iterator,iterator>",
+      "complexity": "定位O(log n)，遍历另加O(k)",
+      "boundary": "不匹配时两个位置相同",
+      "guideId": "stl-extra-multi",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <set>\n#include <string>\nint main(){\n std::multimap<int,std::string> m;\n m.insert(std::make_pair(2,\"b\"));m.insert(std::make_pair(2,\"c\"));m.insert(std::make_pair(1,\"a\"));\n std::pair<std::multimap<int,std::string>::iterator,std::multimap<int,std::string>::iterator> range=m.equal_range(2);\n int count=0;for(std::multimap<int,std::string>::iterator it=range.first;it!=range.second;++it)++count;\n std::cout<<count<<' '<<m.count(2)<<'\\n';\n std::cout<<m.erase(2)<<' '<<m.size()<<'\\n';\n std::multiset<int> s{1,1,2};std::multiset<int>::iterator it=s.find(1);\n if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(1)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 2\n2 1\n2 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-multi-api-2",
+      "name": "multiset::erase(key)",
+      "category": "multimap与重复键：数量、范围和删除",
+      "header": "<map>、<set>",
+      "version": "C++11",
+      "signature": "s.erase(k)",
+      "returns": "删除数量size_type",
+      "complexity": "O(log n + 删除数量)",
+      "boundary": "所有同值元素都会删除",
+      "guideId": "stl-extra-multi",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <set>\n#include <string>\nint main(){\n std::multimap<int,std::string> m;\n m.insert(std::make_pair(2,\"b\"));m.insert(std::make_pair(2,\"c\"));m.insert(std::make_pair(1,\"a\"));\n std::pair<std::multimap<int,std::string>::iterator,std::multimap<int,std::string>::iterator> range=m.equal_range(2);\n int count=0;for(std::multimap<int,std::string>::iterator it=range.first;it!=range.second;++it)++count;\n std::cout<<count<<' '<<m.count(2)<<'\\n';\n std::cout<<m.erase(2)<<' '<<m.size()<<'\\n';\n std::multiset<int> s{1,1,2};std::multiset<int>::iterator it=s.find(1);\n if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(1)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 2\n2 1\n2 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-multi-api-3",
+      "name": "multiset::erase(iterator)",
+      "category": "multimap与重复键：数量、范围和删除",
+      "header": "<map>、<set>",
+      "version": "C++11",
+      "signature": "s.erase(it)",
+      "returns": "后继迭代器（C++11起）",
+      "complexity": "均摊O(1)",
+      "boundary": "先确认it!=end；只删一个",
+      "guideId": "stl-extra-multi",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <set>\n#include <string>\nint main(){\n std::multimap<int,std::string> m;\n m.insert(std::make_pair(2,\"b\"));m.insert(std::make_pair(2,\"c\"));m.insert(std::make_pair(1,\"a\"));\n std::pair<std::multimap<int,std::string>::iterator,std::multimap<int,std::string>::iterator> range=m.equal_range(2);\n int count=0;for(std::multimap<int,std::string>::iterator it=range.first;it!=range.second;++it)++count;\n std::cout<<count<<' '<<m.count(2)<<'\\n';\n std::cout<<m.erase(2)<<' '<<m.size()<<'\\n';\n std::multiset<int> s{1,1,2};std::multiset<int>::iterator it=s.find(1);\n if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(1)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 2\n2 1\n2 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-multi-api-4",
+      "name": "multimap::count",
+      "category": "multimap与重复键：数量、范围和删除",
+      "header": "<map>、<set>",
+      "version": "C++11",
+      "signature": "m.count(k)",
+      "returns": "等价键数量",
+      "complexity": "O(log n + 数量)",
+      "boundary": "重复键数量可大于1",
+      "guideId": "stl-extra-multi",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <set>\n#include <string>\nint main(){\n std::multimap<int,std::string> m;\n m.insert(std::make_pair(2,\"b\"));m.insert(std::make_pair(2,\"c\"));m.insert(std::make_pair(1,\"a\"));\n std::pair<std::multimap<int,std::string>::iterator,std::multimap<int,std::string>::iterator> range=m.equal_range(2);\n int count=0;for(std::multimap<int,std::string>::iterator it=range.first;it!=range.second;++it)++count;\n std::cout<<count<<' '<<m.count(2)<<'\\n';\n std::cout<<m.erase(2)<<' '<<m.size()<<'\\n';\n std::multiset<int> s{1,1,2};std::multiset<int>::iterator it=s.find(1);\n if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(1)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 2\n2 1\n2 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-hash-api-0",
+      "name": "unordered_multiset",
+      "category": "无序容器补全：多重键、容量与失效",
+      "header": "<unordered_map>、<unordered_set>",
+      "version": "C++11",
+      "signature": "unordered_multiset<int> s",
+      "returns": "允许重复键的容器",
+      "complexity": "查找平均O(1)，最坏O(n)",
+      "boundary": "无序；count(k)还与匹配数量有关",
+      "guideId": "stl-extra-hash",
+      "exampleCode": "#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "3 2\n2 1\n7 0 1\n2\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-hash-api-1",
+      "name": "unordered_multimap",
+      "category": "无序容器补全：多重键、容量与失效",
+      "header": "<unordered_map>、<unordered_set>",
+      "version": "C++11",
+      "signature": "unordered_multimap<K,V> m",
+      "returns": "允许重复键的映射",
+      "complexity": "查找平均O(1)，最坏O(n)",
+      "boundary": "没有operator[]，用insert/emplace",
+      "guideId": "stl-extra-hash",
+      "exampleCode": "#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "3 2\n2 1\n7 0 1\n2\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-hash-api-2",
+      "name": "reserve / rehash",
+      "category": "无序容器补全：多重键、容量与失效",
+      "header": "<unordered_map>、<unordered_set>",
+      "version": "C++11",
+      "signature": "m.reserve(n) / m.rehash(b)",
+      "returns": "void",
+      "complexity": "平均O(n)，最坏O(n²)",
+      "boundary": "分别按元素数量/桶数请求；可能使迭代器失效",
+      "guideId": "stl-extra-hash",
+      "exampleCode": "#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "3 2\n2 1\n7 0 1\n2\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-hash-api-3",
+      "name": "load_factor",
+      "category": "无序容器补全：多重键、容量与失效",
+      "header": "<unordered_map>、<unordered_set>",
+      "version": "C++11",
+      "signature": "m.load_factor()",
+      "returns": "float，元素数/桶数",
+      "complexity": "O(1)",
+      "boundary": "不是冲突数，也不是正确率",
+      "guideId": "stl-extra-hash",
+      "exampleCode": "#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "3 2\n2 1\n7 0 1\n2\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-hash-api-4",
+      "name": "max_load_factor",
+      "category": "无序容器补全：多重键、容量与失效",
+      "header": "<unordered_map>、<unordered_set>",
+      "version": "C++11",
+      "signature": "m.max_load_factor(z)",
+      "returns": "设置版本返回void",
+      "complexity": "设置O(1)",
+      "boundary": "z为正；控制最大装载因子，不保证无冲突",
+      "guideId": "stl-extra-hash",
+      "exampleCode": "#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "3 2\n2 1\n7 0 1\n2\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-hash-api-5",
+      "name": "bucket_count",
+      "category": "无序容器补全：多重键、容量与失效",
+      "header": "<unordered_map>、<unordered_set>",
+      "version": "C++11",
+      "signature": "m.bucket_count()",
+      "returns": "桶数size_type",
+      "complexity": "O(1)",
+      "boundary": "具体桶数与实现有关",
+      "guideId": "stl-extra-hash",
+      "exampleCode": "#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "3 2\n2 1\n7 0 1\n2\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-hash-api-6",
+      "name": "unordered_map::at",
+      "category": "无序容器补全：多重键、容量与失效",
+      "header": "<unordered_map>、<unordered_set>",
+      "version": "C++11",
+      "signature": "m.at(k)",
+      "returns": "映射值引用",
+      "complexity": "平均O(1)，最坏O(n)",
+      "boundary": "不存在抛out_of_range；[]会插入缺失键",
+      "guideId": "stl-extra-hash",
+      "exampleCode": "#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "3 2\n2 1\n7 0 1\n2\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-setops-api-0",
+      "name": "set_union",
+      "category": "有序集合运算：并、交、差与包含",
+      "header": "<algorithm>、<iterator>",
+      "version": "C++11",
+      "signature": "set_union(a,b,out)（简写）",
+      "returns": "输出末尾迭代器",
+      "complexity": "O(n+m)",
+      "boundary": "次数取两边最大值",
+      "guideId": "stl-extra-setops",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <iterator>\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> a{1,2,2,4},b{2,3},out;\n std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_symmetric_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);\n std::cout<<std::includes(a.begin(),a.end(),b.begin(),b.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "1 2 2 3 4\n2\n1 2 4\n1 2 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-setops-api-1",
+      "name": "set_intersection",
+      "category": "有序集合运算：并、交、差与包含",
+      "header": "<algorithm>、<iterator>",
+      "version": "C++11",
+      "signature": "set_intersection(a,b,out)（简写）",
+      "returns": "输出末尾迭代器",
+      "complexity": "O(n+m)",
+      "boundary": "次数取两边最小值",
+      "guideId": "stl-extra-setops",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <iterator>\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> a{1,2,2,4},b{2,3},out;\n std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_symmetric_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);\n std::cout<<std::includes(a.begin(),a.end(),b.begin(),b.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "1 2 2 3 4\n2\n1 2 4\n1 2 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-setops-api-2",
+      "name": "set_difference",
+      "category": "有序集合运算：并、交、差与包含",
+      "header": "<algorithm>、<iterator>",
+      "version": "C++11",
+      "signature": "set_difference(a,b,out)（简写）",
+      "returns": "输出末尾迭代器",
+      "complexity": "O(n+m)",
+      "boundary": "方向有意义：A减B",
+      "guideId": "stl-extra-setops",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <iterator>\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> a{1,2,2,4},b{2,3},out;\n std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_symmetric_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);\n std::cout<<std::includes(a.begin(),a.end(),b.begin(),b.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "1 2 2 3 4\n2\n1 2 4\n1 2 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-setops-api-3",
+      "name": "set_symmetric_difference",
+      "category": "有序集合运算：并、交、差与包含",
+      "header": "<algorithm>、<iterator>",
+      "version": "C++11",
+      "signature": "set_symmetric_difference(a,b,out)（简写）",
+      "returns": "输出末尾迭代器",
+      "complexity": "O(n+m)",
+      "boundary": "次数为两边次数差的绝对值",
+      "guideId": "stl-extra-setops",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <iterator>\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> a{1,2,2,4},b{2,3},out;\n std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_symmetric_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);\n std::cout<<std::includes(a.begin(),a.end(),b.begin(),b.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "1 2 2 3 4\n2\n1 2 4\n1 2 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-setops-api-4",
+      "name": "includes",
+      "category": "有序集合运算：并、交、差与包含",
+      "header": "<algorithm>、<iterator>",
+      "version": "C++11",
+      "signature": "includes(a.begin(),a.end(),b.begin(),b.end())",
+      "returns": "bool",
+      "complexity": "O(n+m)",
+      "boundary": "检查B是否被A包含，重复数量也须足够",
+      "guideId": "stl-extra-setops",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <iterator>\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> a{1,2,2,4},b{2,3},out;\n std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_symmetric_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);\n std::cout<<std::includes(a.begin(),a.end(),b.begin(),b.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "1 2 2 3 4\n2\n1 2 4\n1 2 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-heap-api-0",
+      "name": "make_heap",
+      "category": "堆算法：建堆、加入、弹出与排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "make_heap(first,last)",
+      "returns": "void",
+      "complexity": "O(n)",
+      "boundary": "需要随机访问迭代器",
+      "guideId": "stl-extra-heap",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){\n std::vector<int> v{3,1,4};std::make_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n v.push_back(5);std::push_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n std::pop_heap(v.begin(),v.end());std::cout<<v.back()<<'\\n';v.pop_back();\n std::sort_heap(v.begin(),v.end());for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';\n std::cout<<std::is_heap(v.begin(),v.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4\n5\n5\n1 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-heap-api-1",
+      "name": "push_heap",
+      "category": "堆算法：建堆、加入、弹出与排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "push_heap(first,last)",
+      "returns": "void",
+      "complexity": "O(log n)",
+      "boundary": "前n-1项已是堆；先push_back再调用",
+      "guideId": "stl-extra-heap",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){\n std::vector<int> v{3,1,4};std::make_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n v.push_back(5);std::push_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n std::pop_heap(v.begin(),v.end());std::cout<<v.back()<<'\\n';v.pop_back();\n std::sort_heap(v.begin(),v.end());for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';\n std::cout<<std::is_heap(v.begin(),v.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4\n5\n5\n1 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-heap-api-2",
+      "name": "pop_heap",
+      "category": "堆算法：建堆、加入、弹出与排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "pop_heap(first,last)",
+      "returns": "void",
+      "complexity": "O(log n)",
+      "boundary": "非空堆；不删除最后元素",
+      "guideId": "stl-extra-heap",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){\n std::vector<int> v{3,1,4};std::make_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n v.push_back(5);std::push_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n std::pop_heap(v.begin(),v.end());std::cout<<v.back()<<'\\n';v.pop_back();\n std::sort_heap(v.begin(),v.end());for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';\n std::cout<<std::is_heap(v.begin(),v.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4\n5\n5\n1 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-heap-api-3",
+      "name": "sort_heap",
+      "category": "堆算法：建堆、加入、弹出与排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "sort_heap(first,last)",
+      "returns": "void",
+      "complexity": "O(n log n)",
+      "boundary": "输入已经是堆",
+      "guideId": "stl-extra-heap",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){\n std::vector<int> v{3,1,4};std::make_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n v.push_back(5);std::push_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n std::pop_heap(v.begin(),v.end());std::cout<<v.back()<<'\\n';v.pop_back();\n std::sort_heap(v.begin(),v.end());for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';\n std::cout<<std::is_heap(v.begin(),v.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4\n5\n5\n1 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-heap-api-4",
+      "name": "is_heap",
+      "category": "堆算法：建堆、加入、弹出与排序",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "is_heap(first,last)",
+      "returns": "bool",
+      "complexity": "O(n)",
+      "boundary": "检查，不修改区间",
+      "guideId": "stl-extra-heap",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){\n std::vector<int> v{3,1,4};std::make_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n v.push_back(5);std::push_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n std::pop_heap(v.begin(),v.end());std::cout<<v.back()<<'\\n';v.pop_back();\n std::sort_heap(v.begin(),v.end());for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';\n std::cout<<std::is_heap(v.begin(),v.end())<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "4\n5\n5\n1 3 4\n0\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-numeric-api-0",
+      "name": "partial_sum",
+      "category": "numeric补全：前缀累计、相邻差与内积",
+      "header": "<numeric>",
+      "version": "C++11",
+      "signature": "partial_sum(first,last,out)",
+      "returns": "输出末尾迭代器",
+      "complexity": "O(n)",
+      "boundary": "输出空间足够；注意输入值类型溢出",
+      "guideId": "stl-extra-numeric",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <numeric>\nvoid print(const std::vector<long long>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<long long> a{2,3,5},prefix(3),difference(3);\n std::partial_sum(a.begin(),a.end(),prefix.begin());print(prefix);\n std::adjacent_difference(prefix.begin(),prefix.end(),difference.begin());print(difference);\n std::cout<<std::inner_product(a.begin(),a.end(),a.begin(),0LL)<<' '<<std::accumulate(a.begin(),a.end(),0LL)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 5 10\n2 3 5\n38 10\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-numeric-api-1",
+      "name": "adjacent_difference",
+      "category": "numeric补全：前缀累计、相邻差与内积",
+      "header": "<numeric>",
+      "version": "C++11",
+      "signature": "adjacent_difference(first,last,out)",
+      "returns": "输出末尾迭代器",
+      "complexity": "O(n)",
+      "boundary": "第一项不是与0之外某个额外项做差",
+      "guideId": "stl-extra-numeric",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <numeric>\nvoid print(const std::vector<long long>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<long long> a{2,3,5},prefix(3),difference(3);\n std::partial_sum(a.begin(),a.end(),prefix.begin());print(prefix);\n std::adjacent_difference(prefix.begin(),prefix.end(),difference.begin());print(difference);\n std::cout<<std::inner_product(a.begin(),a.end(),a.begin(),0LL)<<' '<<std::accumulate(a.begin(),a.end(),0LL)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 5 10\n2 3 5\n38 10\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-numeric-api-2",
+      "name": "inner_product",
+      "category": "numeric补全：前缀累计、相邻差与内积",
+      "header": "<numeric>",
+      "version": "C++11",
+      "signature": "inner_product(a.begin(),a.end(),b.begin(),0LL)",
+      "returns": "累计值",
+      "complexity": "O(n)",
+      "boundary": "第二段长度足够；乘法本身也不能溢出",
+      "guideId": "stl-extra-numeric",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <numeric>\nvoid print(const std::vector<long long>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<long long> a{2,3,5},prefix(3),difference(3);\n std::partial_sum(a.begin(),a.end(),prefix.begin());print(prefix);\n std::adjacent_difference(prefix.begin(),prefix.end(),difference.begin());print(difference);\n std::cout<<std::inner_product(a.begin(),a.end(),a.begin(),0LL)<<' '<<std::accumulate(a.begin(),a.end(),0LL)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 5 10\n2 3 5\n38 10\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-numeric-api-3",
+      "name": "iota",
+      "category": "numeric补全：前缀累计、相邻差与内积",
+      "header": "<numeric>",
+      "version": "C++11",
+      "signature": "iota(first,last,start)",
+      "returns": "void",
+      "complexity": "O(n)",
+      "boundary": "逐个递增填充，不会扩容",
+      "guideId": "stl-extra-numeric",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <numeric>\nvoid print(const std::vector<long long>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<long long> a{2,3,5},prefix(3),difference(3);\n std::partial_sum(a.begin(),a.end(),prefix.begin());print(prefix);\n std::adjacent_difference(prefix.begin(),prefix.end(),difference.begin());print(difference);\n std::cout<<std::inner_product(a.begin(),a.end(),a.begin(),0LL)<<' '<<std::accumulate(a.begin(),a.end(),0LL)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 5 10\n2 3 5\n38 10\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-numeric-api-4",
+      "name": "accumulate",
+      "category": "numeric补全：前缀累计、相邻差与内积",
+      "header": "<numeric>",
+      "version": "C++11",
+      "signature": "accumulate(first,last,0LL)",
+      "returns": "long long",
+      "complexity": "O(n)",
+      "boundary": "只将结果接到long long并不能修复int初值溢出",
+      "guideId": "stl-extra-numeric",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <numeric>\nvoid print(const std::vector<long long>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<long long> a{2,3,5},prefix(3),difference(3);\n std::partial_sum(a.begin(),a.end(),prefix.begin());print(prefix);\n std::adjacent_difference(prefix.begin(),prefix.end(),difference.begin());print(difference);\n std::cout<<std::inner_product(a.begin(),a.end(),a.begin(),0LL)<<' '<<std::accumulate(a.begin(),a.end(),0LL)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 5 10\n2 3 5\n38 10\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-sequence-api-0",
+      "name": "rotate",
+      "category": "序列算法补全：旋转、稳定分区与比较",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "rotate(first,middle,last)",
+      "returns": "原first的新位置",
+      "complexity": "O(n)",
+      "boundary": "middle可以等于首尾；不是排序",
+      "guideId": "stl-extra-sequence",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-sequence-api-1",
+      "name": "partition",
+      "category": "序列算法补全：旋转、稳定分区与比较",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "partition(first,last,pred)",
+      "returns": "后半段起点",
+      "complexity": "O(n)谓词调用",
+      "boundary": "原地重排但不稳定",
+      "guideId": "stl-extra-sequence",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-sequence-api-2",
+      "name": "stable_partition",
+      "category": "序列算法补全：旋转、稳定分区与比较",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "stable_partition(first,last,pred)",
+      "returns": "后半段起点",
+      "complexity": "O(n)谓词；交换O(n)有缓冲，否则O(n log n)",
+      "boundary": "两组内保序，可能分配临时空间",
+      "guideId": "stl-extra-sequence",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-sequence-api-3",
+      "name": "transform",
+      "category": "序列算法补全：旋转、稳定分区与比较",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "transform(first,last,out,func)",
+      "returns": "输出末尾迭代器",
+      "complexity": "O(n)",
+      "boundary": "目标空间足够；不自动push_back",
+      "guideId": "stl-extra-sequence",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-sequence-api-4",
+      "name": "remove_if",
+      "category": "序列算法补全：旋转、稳定分区与比较",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "remove_if(first,last,pred)",
+      "returns": "新的逻辑末尾",
+      "complexity": "O(n)",
+      "boundary": "需要容器erase才真正缩短",
+      "guideId": "stl-extra-sequence",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-sequence-api-5",
+      "name": "mismatch",
+      "category": "序列算法补全：旋转、稳定分区与比较",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "mismatch(a.begin(),a.end(),b.begin())",
+      "returns": "两个首个不匹配位置",
+      "complexity": "O(n)",
+      "boundary": "无不匹配时返回对应末尾，不可读取",
+      "guideId": "stl-extra-sequence",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-sequence-api-6",
+      "name": "lexicographical_compare",
+      "category": "序列算法补全：旋转、稳定分区与比较",
+      "header": "<algorithm>",
+      "version": "C++11",
+      "signature": "lexicographical_compare(a.begin(),a.end(),b.begin(),b.end())",
+      "returns": "bool",
+      "complexity": "O(min(n,m))",
+      "boundary": "字典序不等于数字串的数值大小",
+      "guideId": "stl-extra-sequence",
+      "exampleCode": "#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-versions-api-0",
+      "name": "try_emplace",
+      "category": "C++17扩展：条件插入、节点转移和gcd",
+      "header": "<map>、<numeric>、<limits>",
+      "version": "C++17",
+      "signature": "m.try_emplace(key,args...)",
+      "returns": "pair<iterator,bool>",
+      "complexity": "map O(log n)",
+      "boundary": "键存在不覆盖值",
+      "guideId": "stl-extra-versions",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <string>\n#include <numeric>\n#include <limits>\nint main(){\n std::map<int,std::string> m;m.emplace(1,\"one\");\n std::pair<std::map<int,std::string>::iterator,bool> a=m.try_emplace(1,\"ignored\"),b=m.insert_or_assign(1,\"uno\");\n std::cout<<a.second<<' '<<b.second<<' '<<m.at(1)<<'\\n';\n std::map<int,std::string>::node_type node=m.extract(1);if(!node.empty()){node.key()=3;m.insert(std::move(node));}\n std::map<int,std::string> other{{3,\"tres\"},{4,\"four\"}};m.merge(other);\n std::cout<<m.size()<<' '<<other.size()<<' '<<m.at(3)<<'\\n';\n std::cout<<std::gcd(18,24)<<' '<<std::lcm(18,24)<<' '<<(std::numeric_limits<long long>::digits>=63)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "0 0 uno\n2 1 uno\n6 72 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-versions-api-1",
+      "name": "insert_or_assign",
+      "category": "C++17扩展：条件插入、节点转移和gcd",
+      "header": "<map>、<numeric>、<limits>",
+      "version": "C++17",
+      "signature": "m.insert_or_assign(key,value)",
+      "returns": "pair<iterator,bool>",
+      "complexity": "map O(log n)",
+      "boundary": "bool为是否新插入，不是是否修改",
+      "guideId": "stl-extra-versions",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <string>\n#include <numeric>\n#include <limits>\nint main(){\n std::map<int,std::string> m;m.emplace(1,\"one\");\n std::pair<std::map<int,std::string>::iterator,bool> a=m.try_emplace(1,\"ignored\"),b=m.insert_or_assign(1,\"uno\");\n std::cout<<a.second<<' '<<b.second<<' '<<m.at(1)<<'\\n';\n std::map<int,std::string>::node_type node=m.extract(1);if(!node.empty()){node.key()=3;m.insert(std::move(node));}\n std::map<int,std::string> other{{3,\"tres\"},{4,\"four\"}};m.merge(other);\n std::cout<<m.size()<<' '<<other.size()<<' '<<m.at(3)<<'\\n';\n std::cout<<std::gcd(18,24)<<' '<<std::lcm(18,24)<<' '<<(std::numeric_limits<long long>::digits>=63)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "0 0 uno\n2 1 uno\n6 72 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-versions-api-2",
+      "name": "extract",
+      "category": "C++17扩展：条件插入、节点转移和gcd",
+      "header": "<map>、<numeric>、<limits>",
+      "version": "C++17",
+      "signature": "m.extract(key)",
+      "returns": "node_type节点句柄",
+      "complexity": "按键O(log n)",
+      "boundary": "节点可能为空；使用前检查",
+      "guideId": "stl-extra-versions",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <string>\n#include <numeric>\n#include <limits>\nint main(){\n std::map<int,std::string> m;m.emplace(1,\"one\");\n std::pair<std::map<int,std::string>::iterator,bool> a=m.try_emplace(1,\"ignored\"),b=m.insert_or_assign(1,\"uno\");\n std::cout<<a.second<<' '<<b.second<<' '<<m.at(1)<<'\\n';\n std::map<int,std::string>::node_type node=m.extract(1);if(!node.empty()){node.key()=3;m.insert(std::move(node));}\n std::map<int,std::string> other{{3,\"tres\"},{4,\"four\"}};m.merge(other);\n std::cout<<m.size()<<' '<<other.size()<<' '<<m.at(3)<<'\\n';\n std::cout<<std::gcd(18,24)<<' '<<std::lcm(18,24)<<' '<<(std::numeric_limits<long long>::digits>=63)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "0 0 uno\n2 1 uno\n6 72 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-versions-api-3",
+      "name": "merge",
+      "category": "C++17扩展：条件插入、节点转移和gcd",
+      "header": "<map>、<numeric>、<limits>",
+      "version": "C++17",
+      "signature": "target.merge(source)",
+      "returns": "void",
+      "complexity": "map总量O(n log(size+n))上界",
+      "boundary": "同键留在源，分配器须兼容",
+      "guideId": "stl-extra-versions",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <string>\n#include <numeric>\n#include <limits>\nint main(){\n std::map<int,std::string> m;m.emplace(1,\"one\");\n std::pair<std::map<int,std::string>::iterator,bool> a=m.try_emplace(1,\"ignored\"),b=m.insert_or_assign(1,\"uno\");\n std::cout<<a.second<<' '<<b.second<<' '<<m.at(1)<<'\\n';\n std::map<int,std::string>::node_type node=m.extract(1);if(!node.empty()){node.key()=3;m.insert(std::move(node));}\n std::map<int,std::string> other{{3,\"tres\"},{4,\"four\"}};m.merge(other);\n std::cout<<m.size()<<' '<<other.size()<<' '<<m.at(3)<<'\\n';\n std::cout<<std::gcd(18,24)<<' '<<std::lcm(18,24)<<' '<<(std::numeric_limits<long long>::digits>=63)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "0 0 uno\n2 1 uno\n6 72 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-versions-api-4",
+      "name": "gcd / lcm",
+      "category": "C++17扩展：条件插入、节点转移和gcd",
+      "header": "<map>、<numeric>、<limits>",
+      "version": "C++17",
+      "signature": "gcd(a,b) / lcm(a,b)",
+      "returns": "共同整数类型的结果",
+      "complexity": "gcd通常O(log min(|a|,|b|))",
+      "boundary": "绝对值与lcm结果须能表示；lcm含0返回0",
+      "guideId": "stl-extra-versions",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <string>\n#include <numeric>\n#include <limits>\nint main(){\n std::map<int,std::string> m;m.emplace(1,\"one\");\n std::pair<std::map<int,std::string>::iterator,bool> a=m.try_emplace(1,\"ignored\"),b=m.insert_or_assign(1,\"uno\");\n std::cout<<a.second<<' '<<b.second<<' '<<m.at(1)<<'\\n';\n std::map<int,std::string>::node_type node=m.extract(1);if(!node.empty()){node.key()=3;m.insert(std::move(node));}\n std::map<int,std::string> other{{3,\"tres\"},{4,\"four\"}};m.merge(other);\n std::cout<<m.size()<<' '<<other.size()<<' '<<m.at(3)<<'\\n';\n std::cout<<std::gcd(18,24)<<' '<<std::lcm(18,24)<<' '<<(std::numeric_limits<long long>::digits>=63)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "0 0 uno\n2 1 uno\n6 72 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    },
+    {
+      "id": "stl-extra-versions-api-5",
+      "name": "numeric_limits",
+      "category": "C++17扩展：条件插入、节点转移和gcd",
+      "header": "<map>、<numeric>、<limits>",
+      "version": "C++17",
+      "signature": "numeric_limits<T>::digits",
+      "returns": "编译期值",
+      "complexity": "O(1)",
+      "boundary": "此例检查有效值位数，不硬编码平台字节数",
+      "guideId": "stl-extra-versions",
+      "exampleCode": "#include <iostream>\n#include <map>\n#include <string>\n#include <numeric>\n#include <limits>\nint main(){\n std::map<int,std::string> m;m.emplace(1,\"one\");\n std::pair<std::map<int,std::string>::iterator,bool> a=m.try_emplace(1,\"ignored\"),b=m.insert_or_assign(1,\"uno\");\n std::cout<<a.second<<' '<<b.second<<' '<<m.at(1)<<'\\n';\n std::map<int,std::string>::node_type node=m.extract(1);if(!node.empty()){node.key()=3;m.insert(std::move(node));}\n std::map<int,std::string> other{{3,\"tres\"},{4,\"four\"}};m.merge(other);\n std::cout<<m.size()<<' '<<other.size()<<' '<<m.at(3)<<'\\n';\n std::cout<<std::gcd(18,24)<<' '<<std::lcm(18,24)<<' '<<(std::numeric_limits<long long>::digits>=63)<<'\\n';\n}\n",
+      "exampleScope": "本模块的组合教学例，包含关联操作；先在代码中查找当前函数名",
+      "exercise": "预测本模块输出，再只改变当前接口的参数或数据，解释前后状态。",
+      "exampleOutput": "0 0 uno\n2 1 uno\n6 72 1\n",
+      "exampleVerifiedAt": "2026-10-24",
+      "sources": [
+        "https://eel.is/c++draft/algorithms"
+      ]
+    }
+  ],
+  "docs": [
+    {
+      "id": "stl-extra-iterators",
+      "title": "迭代器与输出适配：位置、距离和追加",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\n迭代器代表位置，末尾位置不能解引用。advance修改原位置，next和prev返回新位置。vector迭代器支持常数时间跳转；list的跳转需要逐步移动。负向移动要求双向迭代器，不能越过合法边界。back_inserter把写入转换为push_back，省去预先创建结果元素。\n\n适用标准：C++11。头文件：`<iterator>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|advance|`advance(it,n)`|void，修改it|随机访问O(1)，其他O(|n|)|负n要求双向迭代器；不能越界|\n|next / prev|`next(it,n) / prev(it,n)`|新迭代器，原it不变|随机访问O(1)，其他O(|n|)|prev要求双向；不要对begin继续向前|\n|distance|`distance(first,last)`|有符号difference_type|随机访问O(1)，其他O(n)|位置须可达；list上不是常数时间|\n|rbegin / rend|`v.rbegin() / v.rend()`|反向迭代器|O(1)|rend不能读；反向遍历与普通下标不同|\n|back_inserter|`back_inserter(v)`|输出迭代器|每次写入调用push_back|目标需支持push_back；与预留容量reserve不同|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <vector>\n#include <iterator>\n#include <algorithm>\nint main() {\n    std::vector<int> v{2,4,6}, out;\n    std::vector<int>::iterator it=v.begin();\n    std::advance(it,1);\n    std::cout<<*it<<' '<<*std::prev(v.end())<<' '<<std::distance(v.begin(),v.end())<<' '<<*v.rbegin()<<'\\n';\n    std::copy(v.begin(),v.end(),std::back_inserter(out));\n    for(std::size_t i=0;i<out.size();++i)std::cout<<(i?\" \":\"\")<<out[i];\n    std::cout<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n4 6 3 6\n2 4 6\n```\n\n代码已用g++ -std=c++11 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n把advance步数改为2，第一行应为6 6 3 6；对空vector只检查begin==end，不读取末尾。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://eel.is/c++draft/iterator.operations)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++11"
+    },
+    {
+      "id": "stl-extra-multi",
+      "title": "multimap与重复键：数量、范围和删除",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\nmap/set唯一键，multimap/multiset允许等价键。multimap没有operator[]；使用insert或emplace加入一对键和值。equal_range给出该键的左闭右开范围。erase(key)删除所有等价键，erase(iterator)只删一个已定位元素。\n\n适用标准：C++11。头文件：`<map>、<set>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|multimap::insert|`m.insert(make_pair(k,v))`|新元素迭代器|O(log n)|同键不覆盖，multimap没有[]|\n|equal_range|`m.equal_range(k)`|pair<iterator,iterator>|定位O(log n)，遍历另加O(k)|不匹配时两个位置相同|\n|multiset::erase(key)|`s.erase(k)`|删除数量size_type|O(log n + 删除数量)|所有同值元素都会删除|\n|multiset::erase(iterator)|`s.erase(it)`|后继迭代器（C++11起）|均摊O(1)|先确认it!=end；只删一个|\n|multimap::count|`m.count(k)`|等价键数量|O(log n + 数量)|重复键数量可大于1|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <map>\n#include <set>\n#include <string>\nint main(){\n std::multimap<int,std::string> m;\n m.insert(std::make_pair(2,\"b\"));m.insert(std::make_pair(2,\"c\"));m.insert(std::make_pair(1,\"a\"));\n std::pair<std::multimap<int,std::string>::iterator,std::multimap<int,std::string>::iterator> range=m.equal_range(2);\n int count=0;for(std::multimap<int,std::string>::iterator it=range.first;it!=range.second;++it)++count;\n std::cout<<count<<' '<<m.count(2)<<'\\n';\n std::cout<<m.erase(2)<<' '<<m.size()<<'\\n';\n std::multiset<int> s{1,1,2};std::multiset<int>::iterator it=s.find(1);\n if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(1)<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n2 2\n2 1\n2 1\n```\n\n代码已用g++ -std=c++11 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n把最后erase(it)改为erase(1)，最后一行变为1 0；说明一次删一个与一次删同键全部的区别。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://eel.is/c++draft/associative.reqmts)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++11"
+    },
+    {
+      "id": "stl-extra-hash",
+      "title": "无序容器补全：多重键、容量与失效",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\n四种无序关联容器是unordered_map、unordered_set、unordered_multimap、unordered_multiset。它们不维护数值升序，遍历顺序不应用作答案顺序。查找平均常数、最坏线性；多重键的匹配数量另计。reserve/rehash可能让所有迭代器失效，未被删除元素的引用与指针仍有效。先设max_load_factor，再reserve预计元素数。桶数量由实现决定，不编写依赖固定桶数的输出。\n\n适用标准：C++11。头文件：`<unordered_map>、<unordered_set>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|unordered_multiset|`unordered_multiset<int> s`|允许重复键的容器|查找平均O(1)，最坏O(n)|无序；count(k)还与匹配数量有关|\n|unordered_multimap|`unordered_multimap<K,V> m`|允许重复键的映射|查找平均O(1)，最坏O(n)|没有operator[]，用insert/emplace|\n|reserve / rehash|`m.reserve(n) / m.rehash(b)`|void|平均O(n)，最坏O(n²)|分别按元素数量/桶数请求；可能使迭代器失效|\n|load_factor|`m.load_factor()`|float，元素数/桶数|O(1)|不是冲突数，也不是正确率|\n|max_load_factor|`m.max_load_factor(z)`|设置版本返回void|设置O(1)|z为正；控制最大装载因子，不保证无冲突|\n|bucket_count|`m.bucket_count()`|桶数size_type|O(1)|具体桶数与实现有关|\n|unordered_map::at|`m.at(k)`|映射值引用|平均O(1)，最坏O(n)|不存在抛out_of_range；[]会插入缺失键|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <unordered_set>\n#include <unordered_map>\nint main(){\n std::unordered_multiset<int> s{2,2,5};\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_multiset<int>::iterator it=s.find(2);if(it!=s.end())s.erase(it);\n std::cout<<s.size()<<' '<<s.count(2)<<'\\n';\n std::unordered_map<int,int> m;m.max_load_factor(0.7f);m.reserve(32);m[4]=7;\n std::cout<<m.at(4)<<' '<<m.count(99)<<' '<<m.size()<<'\\n';\n std::unordered_multimap<int,int> pairs;pairs.emplace(3,8);pairs.emplace(3,9);\n std::cout<<pairs.count(3)<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n3 2\n2 1\n7 0 1\n2\n```\n\n代码已用g++ -std=c++11 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n把count(99)改为访问m[99]后再输出size：size会增加；访问前先find才不会插入。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://eel.is/c++draft/unord.req)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++11"
+    },
+    {
+      "id": "stl-extra-setops",
+      "title": "有序集合运算：并、交、差与包含",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\n这些算法操作有序区间，不是set容器专用。两个输入必须按同一比较规则排序，输出空间必须足够或使用back_inserter。重复次数按多重集合语义：并取最大次数，交取最小次数，差取非负次数差；不是自动去重。输出不能与输入重叠。\n\n适用标准：C++11。头文件：`<algorithm>、<iterator>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|set_union|`set_union(a,b,out)（简写）`|输出末尾迭代器|O(n+m)|次数取两边最大值|\n|set_intersection|`set_intersection(a,b,out)（简写）`|输出末尾迭代器|O(n+m)|次数取两边最小值|\n|set_difference|`set_difference(a,b,out)（简写）`|输出末尾迭代器|O(n+m)|方向有意义：A减B|\n|set_symmetric_difference|`set_symmetric_difference(a,b,out)（简写）`|输出末尾迭代器|O(n+m)|次数为两边次数差的绝对值|\n|includes|`includes(a.begin(),a.end(),b.begin(),b.end())`|bool|O(n+m)|检查B是否被A包含，重复数量也须足够|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\n#include <iterator>\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> a{1,2,2,4},b{2,3},out;\n std::set_union(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_intersection(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);out.clear();\n std::set_symmetric_difference(a.begin(),a.end(),b.begin(),b.end(),std::back_inserter(out));print(out);\n std::cout<<std::includes(a.begin(),a.end(),b.begin(),b.end())<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n1 2 2 3 4\n2\n1 2 4\n1 2 3 4\n0\n```\n\n代码已用g++ -std=c++11 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n将b改为{2,2}：并为1 2 2 4，交为2 2，A减B为1 4，包含检查为1。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://eel.is/c++draft/alg.set.operations)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++11"
+    },
+    {
+      "id": "stl-extra-heap",
+      "title": "堆算法：建堆、加入、弹出与排序",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\n默认比较规则建立最大堆。make_heap整理已有区间；push_heap前应先把新值追加在末尾，前n-1个元素已经是堆。pop_heap只把最大值移到末尾并维护前缀堆，不会缩短容器，之后才pop_back。sort_heap把堆排为升序，排序后通常已不再是最大堆。比较器必须前后一致。\n\n适用标准：C++11。头文件：`<algorithm>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|make_heap|`make_heap(first,last)`|void|O(n)|需要随机访问迭代器|\n|push_heap|`push_heap(first,last)`|void|O(log n)|前n-1项已是堆；先push_back再调用|\n|pop_heap|`pop_heap(first,last)`|void|O(log n)|非空堆；不删除最后元素|\n|sort_heap|`sort_heap(first,last)`|void|O(n log n)|输入已经是堆|\n|is_heap|`is_heap(first,last)`|bool|O(n)|检查，不修改区间|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\nint main(){\n std::vector<int> v{3,1,4};std::make_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n v.push_back(5);std::push_heap(v.begin(),v.end());std::cout<<v.front()<<'\\n';\n std::pop_heap(v.begin(),v.end());std::cout<<v.back()<<'\\n';v.pop_back();\n std::sort_heap(v.begin(),v.end());for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';\n std::cout<<std::is_heap(v.begin(),v.end())<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n4\n5\n5\n1 3 4\n0\n```\n\n代码已用g++ -std=c++11 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n在pop_heap之后、pop_back之前检查v.size()，仍为4；再次建堆后front为4。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://eel.is/c++draft/alg.heap.operations)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++11"
+    },
+    {
+      "id": "stl-extra-numeric",
+      "title": "numeric补全：前缀累计、相邻差与内积",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\naccumulate的初值类型决定累计类型；整数和可能较大时用0LL。partial_sum输出包含当前项的前缀累计，结果默认使用输入值类型参与累计，必要时先用long long容器。adjacent_difference第一个值原样复制，之后输出相邻差。inner_product按位置相乘并累计，第二个区间至少与第一个等长。\n\n适用标准：C++11。头文件：`<numeric>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|partial_sum|`partial_sum(first,last,out)`|输出末尾迭代器|O(n)|输出空间足够；注意输入值类型溢出|\n|adjacent_difference|`adjacent_difference(first,last,out)`|输出末尾迭代器|O(n)|第一项不是与0之外某个额外项做差|\n|inner_product|`inner_product(a.begin(),a.end(),b.begin(),0LL)`|累计值|O(n)|第二段长度足够；乘法本身也不能溢出|\n|iota|`iota(first,last,start)`|void|O(n)|逐个递增填充，不会扩容|\n|accumulate|`accumulate(first,last,0LL)`|long long|O(n)|只将结果接到long long并不能修复int初值溢出|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <vector>\n#include <numeric>\nvoid print(const std::vector<long long>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<long long> a{2,3,5},prefix(3),difference(3);\n std::partial_sum(a.begin(),a.end(),prefix.begin());print(prefix);\n std::adjacent_difference(prefix.begin(),prefix.end(),difference.begin());print(difference);\n std::cout<<std::inner_product(a.begin(),a.end(),a.begin(),0LL)<<' '<<std::accumulate(a.begin(),a.end(),0LL)<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n2 5 10\n2 3 5\n38 10\n```\n\n代码已用g++ -std=c++11 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n把a改为{1,4,2}，累计为1 5 7，差分恢复1 4 2，内积21、总和7。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://eel.is/c++draft/numeric.ops)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++11"
+    },
+    {
+      "id": "stl-extra-sequence",
+      "title": "序列算法补全：旋转、稳定分区与比较",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\nrotate把[first,middle)移到后面，范围长度不变。stable_partition把条件为真的元素放前面并保留各组内部顺序；partition不保证稳定。remove_if只改变有效前缀并返回新末尾，不缩短vector，要配合erase。mismatch返回首个不匹配位置对；C++11三迭代器版本要求第二段足够长。\n\n适用标准：C++11。头文件：`<algorithm>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|rotate|`rotate(first,middle,last)`|原first的新位置|O(n)|middle可以等于首尾；不是排序|\n|partition|`partition(first,last,pred)`|后半段起点|O(n)谓词调用|原地重排但不稳定|\n|stable_partition|`stable_partition(first,last,pred)`|后半段起点|O(n)谓词；交换O(n)有缓冲，否则O(n log n)|两组内保序，可能分配临时空间|\n|transform|`transform(first,last,out,func)`|输出末尾迭代器|O(n)|目标空间足够；不自动push_back|\n|remove_if|`remove_if(first,last,pred)`|新的逻辑末尾|O(n)|需要容器erase才真正缩短|\n|mismatch|`mismatch(a.begin(),a.end(),b.begin())`|两个首个不匹配位置|O(n)|无不匹配时返回对应末尾，不可读取|\n|lexicographical_compare|`lexicographical_compare(a.begin(),a.end(),b.begin(),b.end())`|bool|O(min(n,m))|字典序不等于数字串的数值大小|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <vector>\n#include <algorithm>\nbool even(int x){return x%2==0;}bool odd(int x){return x%2!=0;}int square(int x){return x*x;}\nvoid print(const std::vector<int>& v){for(std::size_t i=0;i<v.size();++i)std::cout<<(i?\" \":\"\")<<v[i];std::cout<<'\\n';}\nint main(){\n std::vector<int> v{1,2,3,4};std::rotate(v.begin(),v.begin()+1,v.end());print(v);\n std::vector<int>::iterator mid=std::stable_partition(v.begin(),v.end(),even);print(v);std::cout<<(mid-v.begin())<<'\\n';\n std::vector<int> out(v.size());std::transform(v.begin(),v.end(),out.begin(),square);print(out);\n v.erase(std::remove_if(v.begin(),v.end(),odd),v.end());print(v);\n int a[]={1,2,3},b[]={1,4,3};std::pair<int*,int*> p=std::mismatch(a,a+3,b);\n std::cout<<(p.first-a)<<' '<<std::lexicographical_compare(a,a+3,b,b+3)<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n2 3 4 1\n2 4 3 1\n2\n4 16 9 1\n2 4\n1 1\n```\n\n代码已用g++ -std=c++11 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n把remove_if的odd改为even，留下3 1；先看返回位置，不访问被erase删除的旧元素。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://eel.is/c++draft/alg.modifying.operations)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++11"
+    },
+    {
+      "id": "stl-extra-versions",
+      "title": "C++17扩展：条件插入、节点转移和gcd",
+      "kind": "STL专题",
+      "body": "## 使用定位\n\n本节明确需要C++17，不要求当前课程立即掌握。try_emplace在键存在时保留旧值；insert_or_assign存在时赋新值，两者返回pair<iterator,bool>，bool表示是否插入新键。extract取出节点，节点持有元素，可改key再插入；merge只转移目标能接收的键，冲突项留在源容器，分配器须兼容。gcd/lcm作用于整数，结果必须可表示。\n\n适用标准：C++17。头文件：`<map>、<numeric>、<limits>`。这是通用工具补充，不是当天正式题解；扩展条目列入参考不表示已经学过。\n\n## 接口速查\n\n|接口|调用（完整参数见代码）|返回|时间复杂度|条件与边界|\n|---|---|---|---|---|\n|try_emplace|`m.try_emplace(key,args...)`|pair<iterator,bool>|map O(log n)|键存在不覆盖值|\n|insert_or_assign|`m.insert_or_assign(key,value)`|pair<iterator,bool>|map O(log n)|bool为是否新插入，不是是否修改|\n|extract|`m.extract(key)`|node_type节点句柄|按键O(log n)|节点可能为空；使用前检查|\n|merge|`target.merge(source)`|void|map总量O(n log(size+n))上界|同键留在源，分配器须兼容|\n|gcd / lcm|`gcd(a,b) / lcm(a,b)`|共同整数类型的结果|gcd通常O(log min(|a|,|b|))|绝对值与lcm结果须能表示；lcm含0返回0|\n|numeric_limits|`numeric_limits<T>::digits`|编译期值|O(1)|此例检查有效值位数，不硬编码平台字节数|\n\n## 完整可运行示例\n\n```cpp\n#include <iostream>\n#include <map>\n#include <string>\n#include <numeric>\n#include <limits>\nint main(){\n std::map<int,std::string> m;m.emplace(1,\"one\");\n std::pair<std::map<int,std::string>::iterator,bool> a=m.try_emplace(1,\"ignored\"),b=m.insert_or_assign(1,\"uno\");\n std::cout<<a.second<<' '<<b.second<<' '<<m.at(1)<<'\\n';\n std::map<int,std::string>::node_type node=m.extract(1);if(!node.empty()){node.key()=3;m.insert(std::move(node));}\n std::map<int,std::string> other{{3,\"tres\"},{4,\"four\"}};m.merge(other);\n std::cout<<m.size()<<' '<<other.size()<<' '<<m.at(3)<<'\\n';\n std::cout<<std::gcd(18,24)<<' '<<std::lcm(18,24)<<' '<<(std::numeric_limits<long long>::digits>=63)<<'\\n';\n}\n```\n\n## 实际运行输出\n\n```text\n0 0 uno\n2 1 uno\n6 72 1\n```\n\n代码已用g++ -std=c++17 -Wall -Wextra -pedantic编译并逐字核对输出。示例数据为教学自拟。输出空间由示例中的容器实际分配；复杂度默认单个元素操作为常数，不包含大字符串比较等额外成本。\n\n## 短操作与核对\n\n把try_emplace键改为2，a.second为1；merge后只转入没有冲突的4。numeric_limits是相关标准库工具，不把整个标准库等同STL。\n\n短操作可作为工具准备，不增加完整必做题。只有实际练习反馈才记录应用证据。\n\n## 来源与核验\n\n核验日期：2026-10-23。[标准草案或实现官方说明](https://learn.microsoft.com/en-us/cpp/standard-library/map-class?view=msvc-170)。草案是当前草案；本文仅选取上述标准可用的经典重载，未将ranges等新接口混入C++11。\n",
+      "version": "C++17"
+    }
+  ],
+  "verifiedAt": "2026-10-24",
+  "exampleProgramCount": 73
+}

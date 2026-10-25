@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1792756704073,
+      "tag": "0000_shocking_multiple_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1792799696663,
+      "tag": "0001_secret_nuke",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792801771256,
+      "tag": "0002_clammy_yellow_claw",
+      "breakpoints": true
+    }
+  ]
+}

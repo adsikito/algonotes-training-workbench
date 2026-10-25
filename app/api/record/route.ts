@@ -1,0 +1,2 @@
+import {actor,checkOrigin,json,mutate,failure} from '../../../lib/server';
+export async function POST(r:Request){try{checkOrigin(r);const u=await actor(r);const x:any=await r.json();if(['list','document','update','export'].includes(x.kind))throw new Error('内容资料请使用导入/教练更新入口');return json(await mutate(u.id,{id:x.id,kind:x.kind,data:x.data,baseVersion:x.baseVersion,operationId:x.operationId,deleted:x.deleted,restore:x.restore}));}catch(e){return failure(e);}}
