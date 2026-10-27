@@ -33,8 +33,12 @@ const REPO_ROOT = resolve(HERE, '..', '..');
 const DEFAULT_DB = resolve(REPO_ROOT, 'v2', 'data', 'algonotes.sqlite');
 const DEFAULT_SNAPSHOT = resolve(REPO_ROOT, '..', '_migration', 'legacy-snapshot-2026-10-28.json');
 
-/** 本轮迁移的 kind 范围。 */
-const IN_SCOPE = ['problem', 'note', 'folder', 'file', 'knowledge'];
+/** 本轮迁移的 kind 范围（累计 9 种，83/112 条）。 */
+const IN_SCOPE = [
+  'problem', 'note', 'folder', 'file', 'knowledge',
+  // 练习链路：选题 → 开始练 → 记录提交 → 题目状态
+  'selection', 'attempt', 'submission', 'state',
+];
 
 /** 共享种子内容的 owner；其余视为个人数据。 */
 const SHARED_OWNER = '__content__';
@@ -188,6 +192,55 @@ function toNodeRow(record, kindIndex, firstSeen, noteIssue) {
       parent: data.parent ?? null,
       docId: data.docId ?? null,
       referenceApiId: data.referenceApiId ?? null,
+    };
+  } else if (kind === 'state') {
+    // problemId 必须进 meta：nodes_state_problem 这个唯一索引就建在
+    // json_extract(meta,'$.problemId') 上，靠它保证「一题一份状态」。
+    meta = {
+      problemId: data.problemId ?? null,
+      progress: data.progress ?? null,
+      mastery: data.mastery ?? null,
+      favorite: data.favorite ?? null,
+    };
+  } else if (kind === 'selection') {
+    // `day` 是"我哪天选了这道题"。实测 18/18 都有值（只有 2026-10-25/26 两天），
+    // 没有 `date` 字段，所以不需要回退到 updated。
+    meta = {
+      day: data.day ?? null,
+      problemId: data.problemId ?? null,
+    };
+  } else if (kind === 'attempt') {
+    // minutes 实测 4/4 是空字符串。**空串不能写成 0**，否则统计里
+    // "未记录用时" 会变成 "用时 0 分钟"。空串 → null + minutesUnknown。
+    const rawMinutes = data.minutes;
+    const hasMinutes = rawMinutes !== '' && rawMinutes != null && Number.isFinite(Number(rawMinutes)) && Number(rawMinutes) >= 0;
+    meta = {
+      problemId: data.problemId ?? null,
+      status: data.status ?? null,
+      day: data.day ?? null,
+      activityDays: Array.isArray(data.activityDays) ? data.activityDays : [],
+      startedAt: data.startedAt ?? null,
+      endedAt: data.endedAt ?? null,
+      minutes: hasMinutes ? Number(rawMinutes) : null,
+      minutesUnknown: !hasMinutes,
+      help: data.help ?? null,
+      tool: data.tool ?? null,
+      code: data.code ?? null,
+      blocker: data.blocker ?? null,
+      reflection: data.reflection ?? null,
+      resultDraft: data.resultDraft ?? null,
+    };
+  } else if (kind === 'submission') {
+    meta = {
+      problemId: data.problemId ?? null,
+      attemptId: data.attemptId ?? null,
+      result: data.result ?? null,
+      help: data.help ?? null,
+      tool: data.tool ?? null,
+      code: data.code ?? null,
+      source: data.source ?? null,
+      tests: Array.isArray(data.tests) ? data.tests : [],
+      at: data.at ?? null,
     };
   }
 
@@ -384,6 +437,8 @@ function main() {
 
     /** 判定一条类型化引用：目标必须存在且 kind 匹配，否则记断链（不建边）。 */
     const addTypedRef = (src, targetId, expectedKind, rel) => {
+      // 空引用不是"断链"，是"没有引用"，不计入对账总数。
+      if (!targetId) return;
       const actualKind = kindIndex.get(targetId);
       if (!actualKind) {
         refs.total += 1;
@@ -437,6 +492,18 @@ function main() {
           refs.archivedDetail.push({src: record.id, field, original, insertedEdge});
           if (!insertedEdge) refs.archivedFolded += 1;
         }
+      }
+
+      // ── 练习链路：state / selection / attempt / submission 都挂在 problem 上 ──
+      if (record.kind === 'state' || record.kind === 'selection' || record.kind === 'attempt') {
+        addTypedRef(record.id, String(data.problemId ?? ''), 'problem', 'about');
+      }
+
+      if (record.kind === 'submission') {
+        addTypedRef(record.id, String(data.problemId ?? ''), 'problem', 'about');
+        // submission 是 attempt 的下属：一次提交属于某一次练习记录。
+        // 目标不存在时进断链清单，不造边。
+        addTypedRef(record.id, String(data.attemptId ?? ''), 'attempt', 'derived_from');
       }
     }
 
@@ -528,7 +595,7 @@ function report(result) {
  */
 function verifyImport(db, snapshot) {
   const problems = [];
-  const ALL_KINDS = ['problem', 'note', 'folder', 'file', 'knowledge'];
+  const ALL_KINDS = IN_SCOPE;
   const scoped = snapshot.records.filter((record) => ALL_KINDS.includes(record.kind));
 
   console.log('=== ① 累计对账表（kind / 快照数 / 已迁数 / 差） ===');
@@ -627,6 +694,69 @@ function verifyImport(db, snapshot) {
   const files = db.prepare('SELECT node_id, rel_path, size, mime, sha256 FROM files').all();
   console.log(`  files ${files.length} 行`);
   for (const file of files) console.log(`  ${file.node_id.slice(0, 20)}… rel_path=${file.rel_path} size=${file.size} mime=${file.mime} sha256=${String(file.sha256).slice(0, 12)}…`);
+  console.log('');
+
+  console.log('=== ⑦ state：about 边与「一题一份状态」唯一约束 ===');
+  const stateEdges = db.prepare("SELECT COUNT(*) AS c FROM edges WHERE rel = 'about' AND src IN (SELECT id FROM nodes WHERE kind = 'state')").get().c;
+  const stateNodes = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind = 'state'").get().c;
+  console.log(`  state 节点 ${stateNodes} 个；state→problem 的 about 边 ${stateEdges} 条 ${stateEdges === stateNodes ? '✓' : '✖'}`);
+  if (stateEdges !== stateNodes) problems.push(`state 边数 ${stateEdges} ≠ state 节点数 ${stateNodes}`);
+
+  const dupState = db
+    .prepare("SELECT json_extract(meta,'$.problemId') AS pid, COUNT(*) AS c FROM nodes WHERE kind='state' AND deleted=0 GROUP BY pid HAVING c > 1")
+    .all();
+  console.log(`  同一 problemId 出现多份 state：${dupState.length} 组 ${dupState.length === 0 ? '✓' : '✖'}`);
+  if (dupState.length) problems.push(`${dupState.length} 组 state 重复`);
+
+  // 真的去撞一下唯一索引，证明它是生效的（而不是只存在于 DDL 里）
+  const anyState = db.prepare("SELECT meta FROM nodes WHERE kind='state' AND deleted=0 LIMIT 1").get();
+  if (anyState) {
+    const {problemId} = JSON.parse(anyState.meta);
+    let blocked = false;
+    try {
+      db.prepare(
+        `INSERT INTO nodes (id, kind, title, body_md, origin, meta, search_text, created, updated)
+         VALUES ('__dup_state_probe__','state','','','user',?,'','2026-10-28T00:00:00.000Z','2026-10-28T00:00:00.000Z')`,
+      ).run(JSON.stringify({problemId}));
+    } catch {
+      blocked = true;
+    } finally {
+      db.prepare("DELETE FROM nodes WHERE id='__dup_state_probe__'").run();
+    }
+    console.log(`  对 ${problemId} 再插一份 state 被唯一索引拒绝：${blocked ? '是 ✓' : '否 ✖'}`);
+    if (!blocked) problems.push('nodes_state_problem 唯一索引没挡住重复 state');
+  }
+  console.log('');
+
+  console.log('=== ⑧ selection：日期分组 ===');
+  const selectionDays = db
+    .prepare("SELECT json_extract(meta,'$.day') AS day, COUNT(*) AS c FROM nodes WHERE kind='selection' GROUP BY day ORDER BY day")
+    .all();
+  console.log(`  selection ${db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind='selection'").get().c} 条，按日期分组 ${selectionDays.length} 组`);
+  for (const row of selectionDays) console.log(`    ${row.day ?? '(空日期)'} → ${row.c} 条`);
+  if (selectionDays.length === 0 || selectionDays.some((row) => !row.day)) problems.push('selection 存在空日期或无法分组');
+  console.log('');
+
+  console.log('=== ⑨ attempt：minutes 为空必须存 NULL 而非 0 ===');
+  const attempts = db.prepare("SELECT id, meta FROM nodes WHERE kind='attempt'").all().map((row) => ({id: row.id, meta: JSON.parse(row.meta)}));
+  const nullMinutes = attempts.filter((item) => item.meta.minutes === null).length;
+  const zeroMinutes = attempts.filter((item) => item.meta.minutes === 0).length;
+  const unknownFlag = attempts.filter((item) => item.meta.minutesUnknown === true).length;
+  console.log(`  attempt ${attempts.length} 条：minutes=null ${nullMinutes} 条，minutes=0 ${zeroMinutes} 条，minutesUnknown=true ${unknownFlag} 条`);
+  const minutesOk = nullMinutes === attempts.length && zeroMinutes === 0 && unknownFlag === attempts.length;
+  console.log(`  判定：${minutesOk ? '✓ 全部 NULL 且标记未知，没有把"没记"写成"0 分钟"' : '✖ 存在 0 或标记不一致'}`);
+  if (!minutesOk) problems.push('attempt.minutes 存值不符合「空即 NULL」要求');
+  console.log('');
+
+  console.log('=== ⑩ submission → attempt ===');
+  const submissionCount = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind='submission'").get().c;
+  const submissionAttemptEdges = db.prepare("SELECT dst FROM edges WHERE rel='derived_from' AND src IN (SELECT id FROM nodes WHERE kind='submission')").all();
+  console.log(`  submission ${submissionCount} 条；derived_from → attempt 边 ${submissionAttemptEdges.length} 条`);
+  for (const edge of submissionAttemptEdges) {
+    const targetKind = db.prepare('SELECT kind FROM nodes WHERE id = ?').get(edge.dst)?.kind;
+    console.log(`    → ${edge.dst}（kind=${targetKind ?? '不存在'}）${targetKind === 'attempt' ? '✓' : '✖'}`);
+    if (targetKind !== 'attempt') problems.push(`submission→attempt 边目标 kind=${targetKind}`);
+  }
   console.log('');
 
   if (problems.length) {

@@ -31,6 +31,12 @@ CREATE INDEX IF NOT EXISTS nodes_parent       ON nodes(parent_id, title);
 CREATE INDEX IF NOT EXISTS nodes_updated      ON nodes(updated DESC, id);
 -- 同一目录下标题唯一（软删除的行不参与）。根节点的 parent_id 走 NULL。
 CREATE UNIQUE INDEX IF NOT EXISTS nodes_path  ON nodes(parent_id, title) WHERE deleted = 0;
+-- 同一个 problem 只允许一份 `state`（进度/掌握/收藏）。两份并存会互相覆盖，
+-- 且 `state` 有自己的 version 乐观锁，合并进 problem 会让"改状态"和"改题目"抢锁。
+-- 依赖 nodes.meta 里的 problemId（迁移器写入；service 层写入时必须保持一致）。
+CREATE UNIQUE INDEX IF NOT EXISTS nodes_state_problem
+  ON nodes(json_extract(meta, '$.problemId'))
+  WHERE kind = 'state' AND deleted = 0;
 
 -- ③ 边：relation 从"记录"降级为"边"（R3 的关键）
 CREATE TABLE IF NOT EXISTS edges (
