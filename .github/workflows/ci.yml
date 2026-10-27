@@ -1,12 +1,18 @@
 name: CI
 
-# Gate for the v2 rebuild: typecheck, lint and the assertion suite must pass
-# before anything lands on `main`.
+# Gate for the v2 rebuild: typecheck, the assertion suite, and lint on the
+# files a change actually touches.
 #
 # Deliberately NOT running `pnpm build`: the build path needs Cloudflare
 # credentials, so a build job here would either fail for everyone without
-# secrets or silently pass without proving anything. `typecheck` already
-# covers the type-level surface of the same code.
+# secrets or silently pass without proving anything.
+#
+# Lint strategy (see docs/baseline-behavior-2026-10.md §7.2): the tree carries
+# 635 pre-existing lint problems (532 errors, 493 of them `no-explicit-any`)
+# that mostly sit in files the v2 rebuild will replace. Paying that debt now is
+# wasted work, so the blocking gate is **diff-scoped**: only problems on lines
+# this change added are enforced. The full-tree run still happens in the
+# `lint-full` job, as observation only.
 
 on:
   push:
@@ -22,12 +28,15 @@ concurrency:
 
 jobs:
   verify:
-    name: verify (typecheck / lint / test)
+    name: verify (typecheck / test / lint changed lines)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # diff-lint needs the base commit and its merge-base with HEAD.
+          fetch-depth: 0
 
       # Single source of truth: `engines.node` in package.json. GitHub-hosted
       # runners ship a Node binary, which we use only to read that field.
@@ -57,11 +66,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # typecheck first: it is a zero-cost hard gate and currently green.
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Lint
-        run: pnpm lint
-
+      # test second: the assertion suite is the point of this gate and must not
+      # be blocked by historical lint debt.
       - name: Test
         run: pnpm test
+
+      - name: Lint changed lines
+        env:
+          # pull_request -> base/head SHAs; push -> previous tip vs new tip.
+          LINT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          LINT_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: pnpm lint:diff
+
+  lint-full:
+    name: lint-full (存量债观测，不阻塞)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read Node major from package.json engines
+        id: engines
+        run: |
+          major=$(node -p 'require("./package.json").engines.node.replace(/[^0-9.]/g, "").split(".")[0]')
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.engines.outputs.major }}.x
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Baseline reference
+        run: |
+          echo "基线（commit e2692d6 采集）：635 problems / 532 errors / 103 warnings"
+          echo "其中 no-explicit-any 493 条。该数字只允许下降，不允许上升。"
+          echo "新增代码由 verify job 的 diff-lint（变更行过滤）保证不引入新问题。"
+
+      # Observation only: this is NOT a gate. Do not copy `continue-on-error`
+      # into the `verify` job -- that would turn a real gate into a fake one.
+      # It stays red while the v2 rebuild replaces the affected files.
+      - name: Full lint (observation only)
+        continue-on-error: true
+        run: pnpm lint

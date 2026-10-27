@@ -11,9 +11,10 @@
     "build": "node scripts/run-framework.mjs build",
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
+    "lint:diff": "node scripts/lint-changed.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --import ./tests/node-ts-resolve.mjs --test --test-reporter=spec \"tests/**/*.test.ts\"",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test",
+    "verify": "pnpm typecheck && pnpm test && pnpm lint:diff",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

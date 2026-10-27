@@ -28,10 +28,14 @@ export function textDiff(before:string,after:string){
 }
 export function studyStats(entries:Entry[],from:string,to:string){
  const rows=entries.filter(e=>!e.deleted);
- const inRange=(e:Entry)=>{if(e.kind==='submission')return localDay(new Date(e.data.at||e.updated))>=from&&localDay(new Date(e.data.at||e.updated))<=to;return attemptDays(e.data).some(d=>d>=from&&d<=to);};
+ // 归日口径补完：domain.ts:11 的注释承诺「activityDays，缺省回退开始日」，但 attemptDays 只拿得到
+ // data，看不到 entry 级的 updated，回退只能在这一层拼：activityDays/day → startedAt → 记录自身 updated。
+ // 三级都拿不到合法日期时才返回空数组，该记录不计入统计（不按 0 分钟或今天硬算）。
+ const dayOf=(e:Entry):string[]=>{const explicit=attemptDays(e.data);if(explicit.length)return explicit;const at=new Date(e.data?.startedAt??e.updated);return Number.isNaN(at.getTime())?[]:[localDay(at)];};
+ const inRange=(e:Entry)=>{if(e.kind==='submission')return localDay(new Date(e.data.at||e.updated))>=from&&localDay(new Date(e.data.at||e.updated))<=to;return dayOf(e).some(d=>d>=from&&d<=to);};
  const attempts=rows.filter(e=>e.kind==='attempt'&&inRange(e));const submissions=rows.filter(e=>e.kind==='submission'&&inRange(e));
  const daily=new Map<string,{day:string;attempts:number;minutes:number;unknownTime:number}>();
- for(const e of attempts){const days=attemptDays(e.data);for(let i=0;i<days.length;i++){const row=daily.get(days[i])||{day:days[i],attempts:0,minutes:0,unknownTime:0};row.attempts++;if(i===0){if(e.data.minutes!==''&&e.data.minutes!=null&&Number.isFinite(Number(e.data.minutes))&&Number(e.data.minutes)>=0)row.minutes+=Number(e.data.minutes);else row.unknownTime++;}daily.set(days[i],row);}}
+ for(const e of attempts){const days=dayOf(e);for(let i=0;i<days.length;i++){const row=daily.get(days[i])||{day:days[i],attempts:0,minutes:0,unknownTime:0};row.attempts++;if(i===0){if(e.data.minutes!==''&&e.data.minutes!=null&&Number.isFinite(Number(e.data.minutes))&&Number(e.data.minutes)>=0)row.minutes+=Number(e.data.minutes);else row.unknownTime++;}daily.set(days[i],row);}}
  const helps=new Map<string,number>();for(const s of submissions){const h=s.data.help||'未知';helps.set(h,(helps.get(h)||0)+1);}
  return {attempts,submissions,daily:[...daily.values()].sort((a,b)=>a.day.localeCompare(b.day)),helps:[...helps],uniqueProblems:new Set(attempts.map(a=>a.data.problemId)).size,independent:new Set(submissions.filter(s=>s.data.result==='AC'&&s.data.help==='独立').map(s=>s.data.problemId)).size,minutes:[...daily.values()].reduce((n,r)=>n+r.minutes,0),unknownTime:[...daily.values()].reduce((n,r)=>n+r.unknownTime,0)};
 }
