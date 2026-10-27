@@ -43,6 +43,8 @@ const NODE_KINDS = [
   'selection', 'attempt', 'submission', 'state',
   // 其余内容与状态
   'review', 'list', 'document', 'view', 'snippet', 'mistake', 'feedback', 'bookmark',
+  // 真实数据里 0 条、但代码分支存在（由构造数据验证）：训练与阅读位置
+  'simulation', 'reading-state',
 ];
 /** §2.3.4：relation 从"记录"降级为"边"，不落 node。 */
 const EDGE_ONLY_KINDS = ['relation'];
@@ -50,8 +52,13 @@ const EDGE_ONLY_KINDS = ['relation'];
 const TAG_KINDS = ['taxonomy'];
 /** §2.3.4：preference → setting，落 settings 表。 */
 const SETTING_KINDS = ['preference'];
-/** §4.8：update → drop，内容批次改由 content_packs 管理；本条是测试残留。 */
-const DROPPED_KINDS = ['update'];
+/**
+ * §4.8：这些 kind 是"操作产物"而不是实体，一律 drop：
+ * - `update`  → 内容批次改由 content_packs 管理（真实数据仅 1 条测试残留）
+ * - `export`  → 备份分卷（备份文件本身）；产出是文件，不是实体
+ * - `backup`  → 备份包元数据；产出是 .sqlite/zip，落 backups 目录 + 备份表
+ */
+const DROPPED_KINDS = ['update', 'export', 'backup'];
 
 /** 由四类落点求并集，即全部有数据的 kind。 */
 const IN_SCOPE = [...NODE_KINDS, ...EDGE_ONLY_KINDS, ...TAG_KINDS, ...SETTING_KINDS, ...DROPPED_KINDS];
@@ -315,6 +322,30 @@ function toNodeRow(record, kindIndex, firstSeen, noteIssue) {
       location: data.location ?? null,
       sourceVersion: data.sourceVersion ?? null,
     };
+  } else if (kind === 'simulation') {
+    // 限时训练。problemIds 落 edges(rel='contains')，时长/状态进 meta。
+    meta = {
+      status: data.status ?? null,
+      problemIds: Array.isArray(data.problemIds) ? data.problemIds : [],
+      duration: data.duration ?? null,
+      elapsed: data.elapsed ?? null,
+      startedAt: data.startedAt ?? null,
+      endedAt: data.endedAt ?? null,
+      recap: data.recap ?? null,
+      log: Array.isArray(data.log) ? data.log : [],
+    };
+  } else if (kind === 'reading-state') {
+    // 阅读位置。旧代码（components/reading-position.tsx）写入的字段是
+    // title / targetId / targetType / sourceVersion / location / scroll / at。
+    // **没有 `progress` 字段**（见报告：进度只能由 location/scroll 推断，不能当列用）。
+    meta = {
+      targetId: data.targetId ?? null,
+      targetType: data.targetType ?? null,
+      sourceVersion: data.sourceVersion ?? null,
+      location: data.location ?? null,
+      scroll: data.scroll ?? null,
+      at: data.at ?? null,
+    };
   }
 
   meta.createdInferred = created.inferred;
@@ -490,16 +521,16 @@ function main() {
     }
 
     // ── 第二遍：edges（nodes 已齐，dst 都能解析） ──
-    const insertEdge = db.prepare('INSERT OR IGNORE INTO edges (src, rel, dst, ord) VALUES (?, ?, ?, ?)');
+    const insertEdge = db.prepare('INSERT OR IGNORE INTO edges (src, rel, dst, ord, deleted) VALUES (?, ?, ?, ?, ?)');
     const edgeKeys = new Set();
-    const refs = {total: 0, edges: 0, duplicates: 0, broken: [], byRel: {}, archivedDetail: [], archivedFolded: 0, skippedRelations: []};
+    const refs = {total: 0, edges: 0, tombstones: 0, duplicates: 0, broken: [], byRel: {}, archivedDetail: [], archivedFolded: 0, skippedRelations: []};
 
     /**
      * 建一条边；同 `(src, rel, dst)` 折叠为一条。
      *
      * @return {boolean} 真正插入时返回 true，被折叠返回 false。
      */
-    const addEdge = (src, rel, dst, ord = 0) => {
+    const addEdge = (src, rel, dst, ord = 0, deleted = 0) => {
       refs.total += 1;
       const key = `${src}\u0000${rel}\u0000${dst}`;
       if (edgeKeys.has(key)) {
@@ -507,8 +538,9 @@ function main() {
         return false;
       }
       edgeKeys.add(key);
-      insertEdge.run(src, rel, dst, ord);
+      insertEdge.run(src, rel, dst, ord, deleted);
       refs.edges += 1;
+      if (deleted) refs.tombstones += 1;
       refs.byRel[rel] = (refs.byRel[rel] ?? 0) + 1;
       return true;
     };
@@ -606,27 +638,49 @@ function main() {
         const fromId = data.from?.id;
         const toId = data.to?.id;
         const rel = typeof data.relation === 'string' && data.relation ? data.relation : null;
-        if (record.deleted) {
-          // edges 表没有 deleted 列：建边会让用户已删除的关系复活，所以只能跳过并记录。
-          refs.skippedRelations.push({id: record.id, from: fromId, to: toId, rel, reason: '记录已软删除，edges 无 deleted 列可承接'});
-        } else if (!rel) {
+        if (!rel) {
           refs.total += 1;
           refs.broken.push({src: record.id, targetId: `${fromId}→${toId}`, reason: 'relation 类型为空'});
         } else if (!kindIndex.has(fromId) || !kindIndex.has(toId)) {
           refs.total += 1;
           refs.broken.push({src: record.id, targetId: `${fromId}→${toId}`, reason: 'relation 端点不存在'});
         } else {
-          addEdge(fromId, rel, toId);
+          // 软删除的 relation 建"墓碑边"(deleted=1)：既不复活，也不丢历史。
+          addEdge(fromId, rel, toId, 0, record.deleted ? 1 : 0);
+          if (record.deleted) {
+            refs.skippedRelations.push({id: record.id, from: fromId, to: toId, rel, note: '已建成 deleted=1 的墓碑边'});
+          }
+        }
+      }
+
+      // 训练：problemIds[] → problem，rel='contains'（与题单同语义）
+      if (record.kind === 'simulation') {
+        const problemIds = Array.isArray(data.problemIds) ? data.problemIds : [];
+        problemIds.forEach((targetId, ord) => addTypedRef(record.id, targetId, 'problem', 'contains', ord));
+      }
+
+      // 阅读位置：targetId → 目标节点（targetType 可能是 document/file/problem/knowledge）
+      if (record.kind === 'reading-state') {
+        const targetId = typeof data.targetId === 'string' ? data.targetId : '';
+        if (targetId) {
+          const actualKind = kindIndex.get(targetId);
+          if (!actualKind) {
+            refs.total += 1;
+            refs.broken.push({src: record.id, targetId, reason: 'reading-state.targetId 目标不存在'});
+          } else {
+            addEdge(record.id, 'about', targetId);
+          }
         }
       }
     }
 
     // ── 非 node 落点：taxonomy → tags，preference → settings ──
     let tagsInserted = 0;
-    const insertTag = db.prepare('INSERT INTO tags (id, name, parent_id, color) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO NOTHING');
+    const insertTag = db.prepare('INSERT INTO tags (id, name, parent_id, color, dimension) VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO NOTHING');
     for (const record of scoped.filter((item) => TAG_KINDS.includes(item.kind))) {
       const data = record.data ?? {};
-      tagsInserted += insertTag.run(record.id, data.title ?? '', data.parentId || null, null).changes;
+      // dimension 承接旧 taxonomy.category（知识点 / 题目类型 / 自定义），不再丢失。
+      tagsInserted += insertTag.run(record.id, data.title ?? '', data.parentId || null, null, data.category ?? '').changes;
     }
 
     let settingsInserted = 0;
@@ -680,7 +734,9 @@ function report(result) {
   console.log('=== 写入结果 ===');
   console.log(`  nodes 新插入 ${inserted}（跳过已存在 ${rows.length - inserted}）；归档占位节点新增 ${archiveInserted}`);
   console.log(`  files 表新插入 ${fileRows}`);
-  console.log(`  库内 nodes ${db.prepare('SELECT COUNT(*) AS c FROM nodes').get().c}，edges ${db.prepare('SELECT COUNT(*) AS c FROM edges').get().c}`);
+  const edgeLive = db.prepare('SELECT COUNT(*) AS c FROM edges WHERE deleted = 0').get().c;
+  const edgeTomb = db.prepare('SELECT COUNT(*) AS c FROM edges WHERE deleted = 1').get().c;
+  console.log(`  库内 nodes ${db.prepare('SELECT COUNT(*) AS c FROM nodes').get().c}，edges ${db.prepare('SELECT COUNT(*) AS c FROM edges').get().c}（活 ${edgeLive} / 墓碑 ${edgeTomb}）`);
   console.log('');
 
   console.log('=== created 推断统计（本轮范围内） ===');
@@ -729,9 +785,10 @@ function report(result) {
   console.log(`  drop 跳过 ${dropped.length} 条：${dropped.map((record) => `${record.id}（batchId=${record.data?.batchId}，测试残留）`).join('，') || '无'}`);
   console.log('');
 
-  console.log('=== 被跳过的 relation（edges 无 deleted 列） ===');
+  console.log('=== relation 墓碑边（原记录已软删除） ===');
   if (!refs.skippedRelations.length) console.log('  无');
-  for (const item of refs.skippedRelations) console.log(`  ${item.id.slice(0, 8)} ${item.from} -${item.rel}-> ${item.to}：${item.reason}`);
+  for (const item of refs.skippedRelations) console.log(`  ${item.id.slice(0, 8)} ${item.from} -${item.rel}-> ${item.to}：${item.note}`);
+  console.log(`  本次墓碑边 ${refs.tombstones} 条（deleted=1，不复活、不丢历史）`);
   console.log('');
 
   console.log('=== 约束预检 ===');
@@ -775,9 +832,12 @@ function verifyImport(db, snapshot) {
       note = '（1 条记录拆成多行 key）';
     } else if (EDGE_ONLY_KINDS.includes(kind)) {
       destination = 'edges';
-      const live = scoped.filter((record) => record.kind === kind && !record.deleted).length;
-      actual = live;
-      note = `（${expected - live} 条软删除已跳过：edges 无 deleted 列）`;
+      // relation 现在连软删除的也建边（deleted=1 墓碑），所以应当全部对上。
+      const rels = [...new Set(scoped.filter((record) => record.kind === kind).map((record) => record.data?.relation).filter(Boolean))];
+      const placeholders = rels.map(() => '?').join(',');
+      actual = rels.length ? db.prepare(`SELECT COUNT(*) AS c FROM edges WHERE rel IN (${placeholders})`).get(...rels).c : 0;
+      const tombstones = rels.length ? db.prepare(`SELECT COUNT(*) AS c FROM edges WHERE deleted = 1 AND rel IN (${placeholders})`).get(...rels).c : 0;
+      note = `（其中 deleted=1 墓碑 ${tombstones} 条）`;
     } else {
       destination = 'drop';
       actual = 0;
@@ -787,7 +847,7 @@ function verifyImport(db, snapshot) {
     // settings（1 记录拆多行）、edges（软删除的跳过）、drop（故意丢弃）都属"按设计不等"，
     // 差列显示 —，不当作失败；它们的偏离原因写在备注里，仍逐条可见。
     const isSetting = SETTING_KINDS.includes(kind);
-    const explained = isSetting || EDGE_ONLY_KINDS.includes(kind) || DROPPED_KINDS.includes(kind);
+    const explained = isSetting || DROPPED_KINDS.includes(kind);
     const diff = explained ? '—' : String(actual - expected);
     const ok = explained || actual === expected;
     if (!ok) problems.push(`${kind}: 快照 ${expected} / 落点 ${actual}`);
@@ -864,16 +924,26 @@ function verifyImport(db, snapshot) {
   console.log('');
 
   console.log('=== ⑤ edges 与悬空检查 ===');
-  const edges = db.prepare('SELECT src, rel, dst FROM edges').all();
+  const edges = db.prepare('SELECT src, rel, dst, deleted FROM edges').all();
   const dangling = edges.filter((edge) => !db.prepare('SELECT 1 AS x FROM nodes WHERE id = ?').get(edge.src) || !db.prepare('SELECT 1 AS x FROM nodes WHERE id = ?').get(edge.dst));
   const byRel = {};
-  for (const edge of edges) byRel[edge.rel] = (byRel[edge.rel] ?? 0) + 1;
-  console.log(`  edges ${edges.length} 条：${Object.entries(byRel).map(([rel, count]) => `${rel}=${count}`).join('，')}`);
+  for (const edge of edges.filter((item) => !item.deleted)) byRel[edge.rel] = (byRel[edge.rel] ?? 0) + 1;
+  const liveEdges = edges.filter((edge) => !edge.deleted).length;
+  const tombEdges = edges.length - liveEdges;
+  console.log(`  edges 共 ${edges.length} 条 = 活 ${liveEdges} + 墓碑 ${tombEdges}`);
+  console.log(`  活边按关系：${Object.entries(byRel).map(([rel, count]) => `${rel}=${count}`).join('，')}`);
   console.log(`  悬空边 ${dangling.length} ${dangling.length === 0 ? '✓' : '✖'}`);
-  for (const edge of dangling) console.log(`  ✖ ${edge.src} -${edge.rel}-> ${edge.dst}`);
+  for (const edge of dangling) console.log(`  ✖ ${edge.src} -${edge.rel}-> ${edge.dst} (deleted=${edge.deleted})`);
   if (dangling.length) problems.push(`${dangling.length} 条边悬空`);
-  const archivedEdges = db.prepare("SELECT COUNT(*) AS c FROM edges WHERE rel = ?").get(ARCHIVED_REF_REL).c;
-  console.log(`  指向归档占位节点 ${ARCHIVED_REF_REL}：${archivedEdges} 条`);
+
+  // 墓碑边必须与"软删除的 relation 记录"一一对应，且绝不出现在活边里
+  const tombRels = db.prepare('SELECT src, rel, dst FROM edges WHERE deleted = 1').all();
+  const deadRelations = snapshot.records.filter((record) => record.kind === 'relation' && record.deleted);
+  const tombMatch = deadRelations.every((record) => tombRels.some((edge) => edge.src === record.data?.from?.id && edge.dst === record.data?.to?.id && edge.rel === record.data?.relation));
+  console.log(`  软删除 relation ${deadRelations.length} 条 → 墓碑边 ${tombRels.length} 条，逐条对得上：${tombMatch ? '是 ✓' : '否 ✖'}`);
+  if (!tombMatch) problems.push('墓碑边与软删除 relation 不匹配');
+  const archivedEdges = db.prepare("SELECT COUNT(*) AS c FROM edges WHERE rel = ? AND deleted = 0").get(ARCHIVED_REF_REL).c;
+  console.log(`  指向归档占位节点 references-archived（活边）：${archivedEdges} 条`);
   console.log('');
 
   console.log('=== ⑥ files 表 ===');
@@ -883,7 +953,7 @@ function verifyImport(db, snapshot) {
   console.log('');
 
   console.log('=== ⑦ state：about 边与「一题一份状态」唯一约束 ===');
-  const stateEdges = db.prepare("SELECT COUNT(*) AS c FROM edges WHERE rel = 'about' AND src IN (SELECT id FROM nodes WHERE kind = 'state')").get().c;
+  const stateEdges = db.prepare("SELECT COUNT(*) AS c FROM edges WHERE rel = 'about' AND deleted = 0 AND src IN (SELECT id FROM nodes WHERE kind = 'state')").get().c;
   const stateNodes = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind = 'state'").get().c;
   console.log(`  state 节点 ${stateNodes} 个；state→problem 的 about 边 ${stateEdges} 条 ${stateEdges === stateNodes ? '✓' : '✖'}`);
   if (stateEdges !== stateNodes) problems.push(`state 边数 ${stateEdges} ≠ state 节点数 ${stateNodes}`);
@@ -936,7 +1006,7 @@ function verifyImport(db, snapshot) {
 
   console.log('=== ⑩ submission → attempt ===');
   const submissionCount = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind='submission'").get().c;
-  const submissionAttemptEdges = db.prepare("SELECT dst FROM edges WHERE rel='derived_from' AND src IN (SELECT id FROM nodes WHERE kind='submission')").all();
+  const submissionAttemptEdges = db.prepare("SELECT dst FROM edges WHERE rel='derived_from' AND deleted = 0 AND src IN (SELECT id FROM nodes WHERE kind='submission')").all();
   console.log(`  submission ${submissionCount} 条；derived_from → attempt 边 ${submissionAttemptEdges.length} 条`);
   for (const edge of submissionAttemptEdges) {
     const targetKind = db.prepare('SELECT kind FROM nodes WHERE id = ?').get(edge.dst)?.kind;
@@ -952,7 +1022,7 @@ function verifyImport(db, snapshot) {
   for (const doc of documents) {
     const category = JSON.parse(doc.meta).category ?? '(无)';
     docCategories[category] = (docCategories[category] ?? 0) + 1;
-    const edge = db.prepare("SELECT 1 AS x FROM edges WHERE src=? AND rel=?").get(doc.id, ARCHIVED_REF_REL);
+    const edge = db.prepare("SELECT 1 AS x FROM edges WHERE src=? AND rel=? AND deleted = 0").get(doc.id, ARCHIVED_REF_REL);
     if (edge) stlEdges += 1;
   }
   console.log(`  document ${documents.length} 条；分类分布 ${JSON.stringify(docCategories)}`);
@@ -977,7 +1047,7 @@ function verifyImport(db, snapshot) {
 
   console.log('=== ⑬ list → problem 的 contains 边 ===');
   const lists = db.prepare("SELECT id, meta FROM nodes WHERE kind='list'").all().map((row) => ({id: row.id, meta: JSON.parse(row.meta)}));
-  const containsEdges = db.prepare("SELECT src, dst FROM edges WHERE rel='contains'").all();
+  const containsEdges = db.prepare("SELECT src, dst FROM edges WHERE rel='contains' AND deleted = 0").all();
   const expectedItems = lists.reduce((sum, list) => sum + (list.meta.itemCount ?? 0), 0);
   console.log(`  list ${lists.length} 条，声明条目合计 ${expectedItems}；实际 contains 边 ${containsEdges.length} 条`);
   console.log(`  例：${lists[0]?.id}（${lists[0]?.meta.date}）→ ${lists[0]?.meta.itemCount} 条`);
@@ -985,17 +1055,30 @@ function verifyImport(db, snapshot) {
   console.log(`  dst 不是 problem 的边：${badContains.length} ${badContains.length === 0 ? '✓' : '✖'}`);
   console.log('');
 
-  console.log('=== ⑭ relation → edges（rel 用原值） ===');
-  const relEdges = db.prepare("SELECT src, rel, dst FROM edges WHERE rel NOT IN ('about','mentions','part_of','contains','derived_from',?)").all(ARCHIVED_REF_REL);
-  console.log(`  非标准 rel 的边 ${relEdges.length} 条（应来自 relation）`);
+  console.log('=== ⑭ relation → edges（rel 用原值，软删除的留墓碑） ===');
+  const relEdges = db.prepare("SELECT src, rel, dst, deleted FROM edges WHERE rel NOT IN ('about','mentions','part_of','contains','derived_from',?)").all(ARCHIVED_REF_REL);
+  console.log(`  非标准 rel 的边 ${relEdges.length} 条（应来自 relation 记录）`);
   for (const edge of relEdges) {
     const srcKind = db.prepare('SELECT kind FROM nodes WHERE id=?').get(edge.src)?.kind;
     const dstKind = db.prepare('SELECT kind FROM nodes WHERE id=?').get(edge.dst)?.kind;
-    console.log(`    ${edge.src}(${srcKind}) -${edge.rel}-> ${edge.dst}(${dstKind})`);
+    console.log(`    ${edge.src}(${srcKind}) -${edge.rel}-> ${edge.dst}(${dstKind}) deleted=${edge.deleted}`);
   }
   const relationNodes = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind='relation'").get().c;
   console.log(`  nodes 里是否有 kind='relation'：${relationNodes} 条 ${relationNodes === 0 ? '✓ 正确（relation 不落 node）' : '✖ 不该有'}`);
   if (relationNodes) problems.push(`relation 被错误落成 node（${relationNodes} 条）`);
+  console.log('');
+
+  console.log('=== ⑮ tags.dimension（承接 taxonomy.category） ===');
+  const tags = db.prepare('SELECT id, name, dimension FROM tags').all();
+  const tagColumns = db.prepare('PRAGMA table_info(tags)').all().map((column) => column.name);
+  console.log(`  tags 列：${tagColumns.join(', ')}；含 dimension：${tagColumns.includes('dimension') ? '是 ✓' : '否 ✖'}`);
+  if (!tagColumns.includes('dimension')) problems.push('tags 缺 dimension 列');
+  for (const tag of tags) console.log(`    ${tag.id.slice(0, 8)} name=${JSON.stringify(tag.name)} dimension=${JSON.stringify(tag.dimension)}`);
+  const expectedDimensions = new Set(scoped.filter((record) => record.kind === 'taxonomy').map((record) => record.data?.category ?? ''));
+  const missingDimension = tags.filter((tag) => !tag.dimension && expectedDimensions.size && [...expectedDimensions].some(Boolean));
+  console.log(`  旧 taxonomy.category 非空的标签是否都填了 dimension：${missingDimension.length === 0 ? '是 ✓' : `否（${missingDimension.length} 个未填）✖`}`);
+  if (missingDimension.length) problems.push('taxonomy.category 没有填进 tags.dimension');
+  console.log(`  索引 tags_dimension 存在：${db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='index' AND name='tags_dimension'").get() ? '是 ✓' : '否 ✖'}`);
   console.log('');
 
   if (problems.length) {

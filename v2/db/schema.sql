@@ -43,22 +43,34 @@ CREATE INDEX IF NOT EXISTS nodes_review_due
   WHERE kind = 'review' AND deleted = 0;
 
 -- ③ 边：relation 从"记录"降级为"边"（R3 的关键）
+--
+-- `deleted` 与 nodes 保持同一套软删除语义：用户删掉的关系不该"复活"，也不该被抹掉。
+-- 注意 PK 是 (src, rel, dst)，所以同一条边不可能同时存在活行与墓碑行 —— 这正是想要的：
+-- "删除了"就是这一条边的状态，不是两条记录。
+-- **所有读取活边的查询必须带 `deleted = 0`**；下面的索引都带了这个谓词。
 CREATE TABLE IF NOT EXISTS edges (
   src TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-  rel TEXT NOT NULL,            -- about | part_of | derived_from | bookmark | mentions
+  rel TEXT NOT NULL,            -- about | part_of | derived_from | mentions | contains | references-archived | <旧 relation 原值>
   dst TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
   ord INTEGER NOT NULL DEFAULT 0,
+  deleted INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (src, rel, dst)
 );
-CREATE INDEX IF NOT EXISTS edges_dst ON edges(dst, rel);   -- 反查：一个题目/文件下的全部笔记
+CREATE INDEX IF NOT EXISTS edges_dst ON edges(dst, rel) WHERE deleted = 0;   -- 反查：一个题目/文件下的全部笔记
+CREATE INDEX IF NOT EXISTS edges_src ON edges(src, rel) WHERE deleted = 0;
 
 -- ④ 标签：taxonomy 从"记录"降级为"标签"（R2 的关键）
+--
+-- `dimension` 承接旧 `taxonomy.category`（知识点 / 题目类型 / 自定义）。旧代码里这是
+-- 分开的两个维度，丢了它就无法"按维度筛选标签"（H10）。
 CREATE TABLE IF NOT EXISTS tags (
   id        TEXT PRIMARY KEY,
   name      TEXT NOT NULL UNIQUE,
   parent_id TEXT REFERENCES tags(id),
-  color     TEXT
+  color     TEXT,
+  dimension TEXT NOT NULL DEFAULT ''
 );
+CREATE INDEX IF NOT EXISTS tags_dimension ON tags(dimension, name);
 CREATE TABLE IF NOT EXISTS node_tags (
   node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
   tag_id  TEXT NOT NULL REFERENCES tags(id)  ON DELETE CASCADE,
