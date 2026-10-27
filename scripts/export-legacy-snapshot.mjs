@@ -156,6 +156,13 @@ function buildSnapshot(db, dbPath) {
     distribution: {kinds, owners},
     revisionOwners: db.prepare('SELECT owner, COUNT(*) AS c FROM revisions GROUP BY owner ORDER BY owner').all(),
     operationOwners: db.prepare('SELECT owner, COUNT(*) AS c FROM operations GROUP BY owner ORDER BY owner').all(),
+    // 每条记录最早一次 revision 的时间。`records` 表没有 created 列，
+    // 迁移时用它当 created 的最佳近似（见 import-legacy.mjs）。
+    // revisionCount === 1 表示这条记录从未被编辑，此时 firstUpdated 就是 updated，
+    // created 可以视为精确值；revisionCount > 1 时 firstUpdated 只是上界。
+    revisionFirstSeen: db
+      .prepare('SELECT owner, id, MIN(updated) AS firstUpdated, COUNT(*) AS revisionCount FROM revisions GROUP BY owner, id ORDER BY owner, id')
+      .all(),
     // Distinct legacy record shape, for the field survey report.
     kindsSeen: Object.keys(kinds).sort(),
     records,

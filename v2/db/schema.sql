@@ -151,18 +151,30 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 CREATE INDEX IF NOT EXISTS settings_updated ON settings(updated);
 
--- ⑪ 内容批次状态机：承接旧 `update` kind（§4.8：`update` → drop，改由本表管理）
+-- ⑪ 内容批次：承接旧 `update` kind（§4.8：`update` → drop，改由本表管理）
 --
--- digest 存整批内容的摘要：同 id 但 digest 不同 = 同名批次被改过，写入前必须拒绝，
--- 这是"防同批次不同内容"的落点。
--- applied_at 只在成功应用后写入，未应用为 NULL（区分"预览过"与"应用过"）。
+-- **刻意不把状态塞进一个字段。** 这里有两个正交概念：
+--   a) 内容包的生命周期（这份内容作为资产存在多久）
+--        `status`: draft → validated → published → archived
+--   b) 一次应用操作的结果（这批内容有没有成功写进库）
+--        `applied_at IS NULL` = 未应用；`error IS NOT NULL` = 失败
+--        成功时 `applied_count` 记录实际写入条数。
+--
+-- `status` **不加 CHECK**：生命周期还会演进（比如增加 reviewing），用 CHECK 锁死
+-- 取值等于每次状态机升级都要做一次表迁移，而单用户场景下应用层校验足够。
+-- 代价是 DB 层不再拦脏值——所以写入路径必须经 `v2/` 的 service 层，不要裸写 SQL。
+--
+-- `digest` 存整批内容摘要：同 id 但 digest 不同 = 同名批次内容被改过，写入前必须拒绝。
+-- `item_count` 是"批次声明了多少条"，`applied_count` 是"这次实际写进多少条"，
+-- 两者可能不同（部分失败、去重跳过），不能合并成一个字段。
 CREATE TABLE IF NOT EXISTS content_packs (
-  id         TEXT PRIMARY KEY,
-  digest     TEXT NOT NULL,
-  status     TEXT NOT NULL CHECK (status IN ('previewed', 'applied', 'failed')),
-  item_count INTEGER NOT NULL DEFAULT 0,
-  created    TEXT NOT NULL,
-  applied_at TEXT,
-  error      TEXT            -- failed 时的原因
+  id            TEXT PRIMARY KEY,
+  digest        TEXT NOT NULL,
+  status        TEXT NOT NULL,              -- draft | validated | published | archived（应用层校验）
+  item_count    INTEGER NOT NULL DEFAULT 0, -- 批次声明的条目数
+  applied_count INTEGER NOT NULL DEFAULT 0, -- 实际写入的条目数
+  created       TEXT NOT NULL,
+  applied_at    TEXT,                       -- NULL = 未应用
+  error         TEXT                        -- 非 NULL = 失败原因
 );
 CREATE INDEX IF NOT EXISTS content_packs_status ON content_packs(status, created DESC);
