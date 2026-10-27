@@ -135,3 +135,34 @@ CREATE TABLE IF NOT EXISTS operations (
   response TEXT NOT NULL,
   created  TEXT NOT NULL
 );
+
+-- ⑩ 布局/阅读偏好：承接旧 `preference` kind（§2.3.4 映射 → setting）
+--
+-- 刻意**不用** §4.8 写的"单行 KV"，改为按 key 分行，理由：
+--   1) 偏好有 13 项且相互独立。单行整存时，"改字号"的写入会覆盖同一时刻改的
+--      侧栏宽度（read-modify-write 的丢失更新）；分行后每次只写自己那个 key。
+--   2) 服务端常常只需要其中几项，分行可以只读需要的 key，不必每次取整份。
+--   3) 单个值损坏不影响其余键。
+-- 每行的 value 存 JSON（标量/数组/对象都能表达），updated 供增量同步用。
+CREATE TABLE IF NOT EXISTS settings (
+  key     TEXT PRIMARY KEY,
+  value   TEXT NOT NULL,     -- JSON 编码的单个值
+  updated TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS settings_updated ON settings(updated);
+
+-- ⑪ 内容批次状态机：承接旧 `update` kind（§4.8：`update` → drop，改由本表管理）
+--
+-- digest 存整批内容的摘要：同 id 但 digest 不同 = 同名批次被改过，写入前必须拒绝，
+-- 这是"防同批次不同内容"的落点。
+-- applied_at 只在成功应用后写入，未应用为 NULL（区分"预览过"与"应用过"）。
+CREATE TABLE IF NOT EXISTS content_packs (
+  id         TEXT PRIMARY KEY,
+  digest     TEXT NOT NULL,
+  status     TEXT NOT NULL CHECK (status IN ('previewed', 'applied', 'failed')),
+  item_count INTEGER NOT NULL DEFAULT 0,
+  created    TEXT NOT NULL,
+  applied_at TEXT,
+  error      TEXT            -- failed 时的原因
+);
+CREATE INDEX IF NOT EXISTS content_packs_status ON content_packs(status, created DESC);

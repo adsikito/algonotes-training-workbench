@@ -20,6 +20,7 @@ import {dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {toMatchQuery, toSearchText} from './fts-text.mjs';
+import {searchNodes} from './search.mjs';
 
 /** 本文件所在目录（v2/db）。 */
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -190,7 +191,38 @@ function selfTest(db) {
     console.log(`  删除后查询 "单调" → ${afterDelete.length} 条`);
     check(afterDelete.length === 0, '删除后不应再命中');
 
-    console.log('  自检通过：写入→检索→更新→删除 全链路一致');
+    // ── 单字降级：二元组索引命中不了单字，必须由 searchNodes() 走 LIKE ──
+    db.prepare(
+      `INSERT INTO nodes (id, kind, title, body_md, search_text, created, updated)
+       VALUES (?, 'note', ?, ?, ?, '2026-10-28T00:00:00.000Z', '2026-10-28T00:00:00.000Z')`,
+    ).run(nodeId, title, body, toSearchText(title, body));
+
+    const single = searchNodes(db, '组');
+    console.log(`  单字查询 "组" → mode=${single.mode} 命中 ${single.rows.length} 条`);
+    check(single.mode === 'like', '单字查询应走 LIKE 降级，而不是 FTS');
+    check(single.rows.some((row) => row.id === nodeId), '单字查询应能命中标题里的「组」');
+
+    const multi = searchNodes(db, '二元');
+    console.log(`  双字查询 "二元" → mode=${multi.mode} 命中 ${multi.rows.length} 条`);
+    check(multi.mode === 'fts', '≥2 字符应走 FTS');
+    check(multi.rows.some((row) => row.id === nodeId), '双字查询应命中');
+
+    // FTS 语法敏感字符不能让调用方收到异常
+    let syntaxSafe = true;
+    for (const weird of ['"', '*', '-x', 'a OR', 'NOT']) {
+      try {
+        searchNodes(db, weird);
+      } catch {
+        syntaxSafe = false;
+        console.log(`  ✖ 查询 ${JSON.stringify(weird)} 抛出了异常`);
+      }
+    }
+    console.log(`  FTS 语法敏感查询（"、*、-x、a OR、NOT）不抛异常：${syntaxSafe ? '是' : '否'}`);
+    check(syntaxSafe, 'FTS 语法错误必须内部降级，不能抛给调用方');
+
+    db.prepare('DELETE FROM nodes WHERE id = ?').run(nodeId);
+
+    console.log('  自检通过：写入→检索→更新→删除 全链路一致；单字降级与语法容错正常');
   } finally {
     db.exec('ROLLBACK TO selftest; RELEASE selftest');
   }
