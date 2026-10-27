@@ -1,5 +1,7 @@
 import type { Entry } from './domain';
 export const pageIds = ['today', 'problems', 'knowledge', 'notes', 'review', 'records', 'studio'] as const;
+/* 03 §3(1)/批5：主导航 3 组呈现（组间顺序固定、组内随 prefs.order）；prefs.order/hidden 数据结构不变 */
+export const NAV_GROUPS: [string, readonly string[]][] = [['训练', ['today', 'problems']], ['知识', ['knowledge', 'notes']], ['复盘', ['review', 'records', 'studio']]];
 export type Preferences = {
     order: string[];
     hidden: string[];

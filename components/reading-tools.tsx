@@ -1,6 +1,6 @@
 'use client';
 import {useState, useMemo, useRef, useEffect} from 'react';
-import {Bookmark, Highlighter, Trash2, ArrowUpRight, Search, BookOpen} from 'lucide-react';
+import {Bookmark, Highlighter, Trash2, ArrowUpRight, Search, BookOpen, ChevronUp} from 'lucide-react';
 import type {Entry} from '../lib/domain';
 import {markKinds,marksFor,cleanLocation,type ReadingTarget,type ReadingLocation} from '../lib/reading';
 import {Markdown, Empty, Pill} from './workspace-ui';
@@ -9,9 +9,10 @@ import type {Preferences} from '../lib/workspace';
 export function ReadingSettings({prefs,onPrefs}:{prefs:Preferences;onPrefs:(v:Preferences)=>void}){
     return <details className="reading-settings"><summary>阅读设置</summary><div className="reading-setting-grid"><label>字号<select aria-label="阅读字号" value={prefs.fontSize} onChange={e=>onPrefs({...prefs,fontSize:Number(e.target.value)})}>{[14,16,17,18,20,22].map(x=><option key={x} value={x}>{x}px</option>)}</select></label><label>行距<select aria-label="阅读行距" value={prefs.readerLineHeight} onChange={e=>onPrefs({...prefs,readerLineHeight:Number(e.target.value)})}><option value="1.65">紧凑 1.65</option><option value="1.85">舒适 1.85</option><option value="2.05">宽松 2.05</option></select></label><label>内容宽度<select aria-label="阅读内容宽度" value={prefs.readerWidth} onChange={e=>onPrefs({...prefs,readerWidth:Number(e.target.value)})}><option value="680">窄 · 680px</option><option value="800">标准 · 800px</option><option value="960">宽 · 960px</option></select></label></div></details>;
 }
-export function ReadingMarks({target,location,entries,save,remove,onJump,tell,readSelection}:{target:ReadingTarget;location:ReadingLocation;entries:Entry[];save:any;remove:any;onJump:(p:ReadingLocation)=>void;tell:(s:string)=>void;readSelection?:()=>string}){
+export function ReadingMarks({target,location,entries,save,remove,onJump,tell,readSelection,excerptRef}:{target:ReadingTarget;location:ReadingLocation;entries:Entry[];save:any;remove:any;onJump:(p:ReadingLocation)=>void;tell:(s:string)=>void;readSelection?:()=>string;excerptRef?:{current:((text:string)=>void)|null}}){
     const [kind,setKind]=useState<string>('书签'),[comment,setComment]=useState(''),[quote,setQuote]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[editing,setEditing]=useState<Entry|null>(null);
     const marks=marksFor(entries,target);
+    useEffect(()=>{if(excerptRef)excerptRef.current=(text:string)=>{setQuote(text.slice(0,2000));setKind('重点');};});
     async function add(){setBusy(true);setError('');try{await save('bookmark',{...(editing?editing.data:{targetId:target.id,targetType:target.type,title:target.title,sourceVersion:target.version??null}),markKind:kind,comment:comment.trim(),location:cleanLocation({...((editing?.data.location)||location),quote})},editing||undefined);setComment('');setQuote('');setEditing(null);tell('标记已保存，可在“我的标记”统一查找');}catch(e:any){setError(e.message);}finally{setBusy(false);}}
     return <section className="reading-marks"><div className="section-heading"><h3><Bookmark size={16}/> 阅读标记</h3><span className="mini">{marks.length}条 · 不改写原件</span></div><p className="mini">记录当前页码、行号或摘录。PDF中的文字可复制粘贴到摘录框；标记不会自动代表掌握。</p><div className="mark-compose"><label>类型<select aria-label="阅读标记类型" value={kind} onChange={e=>setKind(e.target.value)}>{markKinds.map(k=><option key={k}>{k}</option>)}</select></label><label>一句理解或疑问<input aria-label="标记备注" value={comment} maxLength={1000} placeholder="这段为什么这样写？下次回来核对…" onChange={e=>setComment(e.target.value)}/></label></div><details open={!!quote}><summary>摘录原文（可选）</summary><textarea aria-label="标记摘录" rows={3} value={quote} maxLength={2000} placeholder="保留一小段原文，之后可以搜索到" onChange={e=>setQuote(e.target.value)}/></details><div className="button-group">{readSelection&&<button className="button small" onMouseDown={e=>e.preventDefault()} onClick={()=>{const selected=readSelection();if(selected){setQuote(selected.slice(0,2000));setKind('重点');}else tell('请先选中正文中的一段文字，也可粘贴摘录');}}><Highlighter size={14}/>摘录选中文字</button>}<button className="button small primary" disabled={busy} onClick={add}>{busy?'正在保存…':editing?'保存修改':'保存标记'}</button>{editing&&<button className="button small" disabled={busy} onClick={()=>{setEditing(null);setComment('');setQuote('');}}>取消编辑</button>}</div>{error&&<p role="alert" className="inline-error">{error}</p>}
         {marks.map(m=><article className="reading-mark" key={m.id}><header><Pill>{m.data.markKind||'书签'}</Pill><button className="text-button" onClick={()=>onJump(m.data.location||{})}>{m.data.location?.page?'第'+m.data.location.page+'页':m.data.location?.line?'第'+m.data.location.line+'行':'回到摘录'}<ArrowUpRight size={14}/></button><button className="text-button" disabled={busy} aria-label={'编辑标记 '+(m.data.comment||m.data.markKind)} onClick={()=>{setEditing(m);setKind(m.data.markKind||'书签');setComment(m.data.comment||'');setQuote(m.data.location?.quote||'');}}>编辑</button><button className="icon-button" disabled={busy} aria-label={'回收标记 '+(m.data.comment||m.data.markKind)} onClick={async()=>{setBusy(true);try{await remove(m);}finally{setBusy(false);}}}><Trash2 size={14}/></button></header>{m.data.comment&&<p>{m.data.comment}</p>}{m.data.location?.quote&&<blockquote>{m.data.location.quote}</blockquote>}{m.data.sourceVersion!=null&&target.version!=null&&m.data.sourceVersion!==target.version&&<p className="mini">来源版本已变化，请核对定位。</p>}</article>)}
@@ -26,4 +27,22 @@ export function ReadingArticle({body,children}:{body:string;children?:React.Reac
     const ref=useRef<HTMLDivElement>(null),[headings,setHeadings]=useState<{id:string;title:string;depth:number}[]>([]);
     useEffect(()=>{const nodes=ref.current?.querySelectorAll('.markdown h1,.markdown h2,.markdown h3,.markdown h4,.markdown h5,.markdown h6');setHeadings(Array.from(nodes||[]).map((n,i)=>({id:'reading-heading-'+i,title:n.textContent||'',depth:Number(n.tagName.slice(1))})));},[body]);
     return <div className="reading-article" ref={ref}>{headings.length>2&&<details className="reading-outline"><summary>文章目录 · {headings.length}节</summary><nav aria-label="文章目录">{headings.map((h,i)=><button key={h.id} style={{paddingLeft:Math.min(h.depth-1,3)*14+10}} onClick={()=>ref.current?.querySelectorAll('.markdown h1,.markdown h2,.markdown h3,.markdown h4,.markdown h5,.markdown h6')[i]?.scrollIntoView({block:'start',behavior:'smooth'})}>{h.title}</button>)}</nav></details>}<Markdown body={body}/>{children}</div>;
+}
+/* A8：正文选中即浮出的『摘录』轻按钮（quote≤2000 契约与栏内按钮一致；保存仍走 ReadingMarks） */
+export function SelectionExcerpt({container,readSelection,onExcerpt,tell}:{container:React.RefObject<HTMLElement|null>;readSelection:()=>string;onExcerpt:(text:string)=>void;tell:(s:string)=>void}){
+    const [pos,setPos]=useState<{top:number;left:number}|null>(null);
+    useEffect(()=>{
+        const update=()=>{const s=window.getSelection();const box=container.current;if(!s||s.isCollapsed||!s.rangeCount||!box||!s.anchorNode||!box.contains(s.anchorNode)||!s.focusNode||!box.contains(s.focusNode)||!s.toString().trim()){setPos(null);return;}const r=s.getRangeAt(s.rangeCount-1).getBoundingClientRect();if(!r.width&&!r.height){setPos(null);return;}setPos({top:Math.min(window.innerHeight-52,Math.max(8,r.bottom+8)),left:Math.min(window.innerWidth-130,Math.max(8,r.left))});};
+        const hide=()=>setPos(null);
+        document.addEventListener('selectionchange',update);
+        window.addEventListener('scroll',hide,true);window.addEventListener('resize',hide);
+        return()=>{document.removeEventListener('selectionchange',update);window.removeEventListener('scroll',hide,true);window.removeEventListener('resize',hide);};
+    },[container]);
+    if(!pos)return null;
+    return <button className="excerpt-float" style={{top:pos.top,left:pos.left}} onMouseDown={e=>e.preventDefault()} onClick={()=>{const text=readSelection();setPos(null);if(text)onExcerpt(text.slice(0,2000));else tell('请先选中正文中的一段文字，也可粘贴摘录');}}><Highlighter size={14}/>摘录</button>;
+}
+/* 03 §6.12 responsive：≤1000 单栏时正文后的『回到顶部』浮钮（滚动容器=.reading-page） */
+export function BackToTop(){
+    const ref=useRef<HTMLButtonElement>(null);
+    return <button ref={ref} className="back-top" aria-label="回到顶部" onClick={()=>{const box=ref.current?.closest('.reading-page');if(box)box.scrollTop=0;}}><ChevronUp size={16}/>回到顶部</button>;
 }
