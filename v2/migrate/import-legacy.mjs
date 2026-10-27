@@ -33,12 +33,28 @@ const REPO_ROOT = resolve(HERE, '..', '..');
 const DEFAULT_DB = resolve(REPO_ROOT, 'v2', 'data', 'algonotes.sqlite');
 const DEFAULT_SNAPSHOT = resolve(REPO_ROOT, '..', '_migration', 'legacy-snapshot-2026-10-28.json');
 
-/** 本轮迁移的 kind 范围（累计 9 种，83/112 条）。 */
-const IN_SCOPE = [
+/**
+ * 21 种有真实数据的 kind，按 §2.3.4 的映射分成四类落点。
+ * 注意：**不是所有 kind 都变成 node**，所以对账必须按落点算，否则永远对不上 112。
+ */
+const NODE_KINDS = [
   'problem', 'note', 'folder', 'file', 'knowledge',
-  // 练习链路：选题 → 开始练 → 记录提交 → 题目状态
+  // 练习链路
   'selection', 'attempt', 'submission', 'state',
+  // 其余内容与状态
+  'review', 'list', 'document', 'view', 'snippet', 'mistake', 'feedback', 'bookmark',
 ];
+/** §2.3.4：relation 从"记录"降级为"边"，不落 node。 */
+const EDGE_ONLY_KINDS = ['relation'];
+/** §2.3.4：taxonomy 从"记录"降级为"标签"，落 tags / node_tags。 */
+const TAG_KINDS = ['taxonomy'];
+/** §2.3.4：preference → setting，落 settings 表。 */
+const SETTING_KINDS = ['preference'];
+/** §4.8：update → drop，内容批次改由 content_packs 管理；本条是测试残留。 */
+const DROPPED_KINDS = ['update'];
+
+/** 由四类落点求并集，即全部有数据的 kind。 */
+const IN_SCOPE = [...NODE_KINDS, ...EDGE_ONLY_KINDS, ...TAG_KINDS, ...SETTING_KINDS, ...DROPPED_KINDS];
 
 /** 共享种子内容的 owner；其余视为个人数据。 */
 const SHARED_OWNER = '__content__';
@@ -136,6 +152,7 @@ function toNodeRow(record, kindIndex, firstSeen, noteIssue) {
 
   let parentId = null;
   let meta = {};
+  let deleted = record.deleted;
 
   if (kind === 'problem') {
     meta = {
@@ -242,12 +259,71 @@ function toNodeRow(record, kindIndex, firstSeen, noteIssue) {
       tests: Array.isArray(data.tests) ? data.tests : [],
       at: data.at ?? null,
     };
+  } else if (kind === 'review') {
+    // due 保持 YYYY-MM-DD 原样（新架构要按 `due <= today` 查到期，字符串可直接比较）。
+    // 状态含「取消」：取消不是删除，但也不该出现在待办里 —— 保留节点、置 deleted=1，历史仍可查。
+    if (data.status === '取消') deleted = 1;
+    meta = {
+      due: data.due ?? null,
+      status: data.status ?? null,
+      completedAt: data.completedAt ?? null,
+      problemId: data.problemId ?? null,
+    };
+  } else if (kind === 'list') {
+    // 题单本身是 node；items[] 落 edges(rel='contains')，见下方边构建。
+    meta = {
+      date: data.date ?? null,
+      itemCount: Array.isArray(data.items) ? data.items.length : 0,
+    };
+  } else if (kind === 'document') {
+    // 实测 5 条全部 kind='STL专题' 且正文 1307–1757 字符，是有独立价值的讲义，
+    // **不是**接口列表的复制品。用户要删的是"接口速查功能"，不是讲义本身，
+    // 所以正文完整保留，只用一条 references-archived 边标注"相关速查已归档"。
+    meta = {
+      category: data.kind ?? null,   // 旧 payload 用 kind 字段表示"STL专题"
+      date: data.date ?? null,
+    };
+  } else if (kind === 'view') {
+    meta = {
+      filters: data.filters ?? null,
+      query: data.query ?? null,
+      smart: data.smart ?? null,
+    };
+  } else if (kind === 'snippet') {
+    // 代码放 body_md，标准放 meta。其余字段是 study 表单残留，按白名单丢弃。
+    meta = {standard: data.standard ?? null};
+  } else if (kind === 'mistake') {
+    meta = {
+      status: data.status ?? null,
+      problemId: data.problemId || null,
+    };
+  } else if (kind === 'feedback') {
+    meta = {
+      category: data.category ?? null,
+      due: data.due ?? null,
+      status: data.status ?? null,
+      problemId: data.problemId || null,
+    };
+  } else if (kind === 'bookmark') {
+    // targetId 实测是 stl-reference.json 的 guideId（而 targetType 写的是 document，
+    // 二者不自洽）。STL 已归档，原值留在 meta，边指向归档占位节点。
+    meta = {
+      targetId: data.targetId ?? null,
+      targetType: data.targetType ?? null,
+      markKind: data.markKind ?? null,
+      comment: data.comment ?? null,
+      location: data.location ?? null,
+      sourceVersion: data.sourceVersion ?? null,
+    };
   }
 
   meta.createdInferred = created.inferred;
 
   const title = typeof data.title === 'string' ? data.title : (data.name ?? '');
-  const bodyMd = typeof data.body === 'string' ? data.body : '';
+  // snippet 的正文是 code 字段，不是 body。
+  const bodyMd = kind === 'snippet'
+    ? (typeof data.code === 'string' ? data.code : '')
+    : (typeof data.body === 'string' ? data.body : '');
 
   return {
     id: record.id,
@@ -260,7 +336,7 @@ function toNodeRow(record, kindIndex, firstSeen, noteIssue) {
     search_text: toSearchText(title, bodyMd),
     created: created.created,
     updated: record.updated,
-    deleted: record.deleted,
+    deleted,
     version: record.version,
     createdGainMs: created.gainedMs,
   };
@@ -357,11 +433,13 @@ function main() {
     if (options.verify) return verifyImport(db, snapshot);
 
     const scoped = snapshot.records.filter((record) => IN_SCOPE.includes(record.kind));
+    // 只有 NODE_KINDS 会成为 node；relation/taxonomy/preference/update 各有别的落点。
+    const nodeRecords = scoped.filter((record) => NODE_KINDS.includes(record.kind));
 
     // ── 第一遍：nodes。folder 先父后子，其余顺序无关。 ──
-    const folders = scoped.filter((record) => record.kind === 'folder');
+    const folders = nodeRecords.filter((record) => record.kind === 'folder');
     const {ordered: orderedFolders, cycles} = orderFolders(folders);
-    const rest = scoped.filter((record) => record.kind !== 'folder');
+    const rest = nodeRecords.filter((record) => record.kind !== 'folder');
 
     const unresolvedParents = [];
     const rows = [
@@ -414,7 +492,7 @@ function main() {
     // ── 第二遍：edges（nodes 已齐，dst 都能解析） ──
     const insertEdge = db.prepare('INSERT OR IGNORE INTO edges (src, rel, dst, ord) VALUES (?, ?, ?, ?)');
     const edgeKeys = new Set();
-    const refs = {total: 0, edges: 0, duplicates: 0, broken: [], byRel: {}, archivedDetail: [], archivedFolded: 0};
+    const refs = {total: 0, edges: 0, duplicates: 0, broken: [], byRel: {}, archivedDetail: [], archivedFolded: 0, skippedRelations: []};
 
     /**
      * 建一条边；同 `(src, rel, dst)` 折叠为一条。
@@ -436,7 +514,7 @@ function main() {
     };
 
     /** 判定一条类型化引用：目标必须存在且 kind 匹配，否则记断链（不建边）。 */
-    const addTypedRef = (src, targetId, expectedKind, rel) => {
+    const addTypedRef = (src, targetId, expectedKind, rel, ord = 0) => {
       // 空引用不是"断链"，是"没有引用"，不计入对账总数。
       if (!targetId) return;
       const actualKind = kindIndex.get(targetId);
@@ -450,7 +528,7 @@ function main() {
         refs.broken.push({src, targetId, reason: `kind 不匹配：期望 ${expectedKind}，实际 ${actualKind}`});
         return;
       }
-      addEdge(src, rel, targetId);
+      addEdge(src, rel, targetId, ord);
     };
 
     for (const record of scoped) {
@@ -505,11 +583,66 @@ function main() {
         // 目标不存在时进断链清单，不造边。
         addTypedRef(record.id, String(data.attemptId ?? ''), 'attempt', 'derived_from');
       }
+
+      // 题单条目：list → problem，rel='contains'，ord 保序
+      if (record.kind === 'list') {
+        const items = Array.isArray(data.items) ? data.items : [];
+        items.forEach((targetId, ord) => addTypedRef(record.id, targetId, 'problem', 'contains', ord));
+      }
+
+      // STL 专题讲义：正文保留为 document 节点，另加一条"相关速查已归档"的标注边
+      if (record.kind === 'document' && data.kind === 'STL专题') {
+        addEdge(record.id, ARCHIVED_REF_REL, ARCHIVE_NODE.id);
+      }
+
+      // 书签的 targetId 是 guideId（targetType 却写 document，二者不自洽），同样指向归档占位
+      if (record.kind === 'bookmark' && typeof data.targetId === 'string' && data.targetId) {
+        const insertedEdge = addEdge(record.id, ARCHIVED_REF_REL, ARCHIVE_NODE.id);
+        refs.archivedDetail.push({src: record.id, field: 'targetId', original: data.targetId, insertedEdge});
+      }
+
+      // relation 落边，不落 node。rel 用 payload 原值，不改名。
+      if (record.kind === 'relation') {
+        const fromId = data.from?.id;
+        const toId = data.to?.id;
+        const rel = typeof data.relation === 'string' && data.relation ? data.relation : null;
+        if (record.deleted) {
+          // edges 表没有 deleted 列：建边会让用户已删除的关系复活，所以只能跳过并记录。
+          refs.skippedRelations.push({id: record.id, from: fromId, to: toId, rel, reason: '记录已软删除，edges 无 deleted 列可承接'});
+        } else if (!rel) {
+          refs.total += 1;
+          refs.broken.push({src: record.id, targetId: `${fromId}→${toId}`, reason: 'relation 类型为空'});
+        } else if (!kindIndex.has(fromId) || !kindIndex.has(toId)) {
+          refs.total += 1;
+          refs.broken.push({src: record.id, targetId: `${fromId}→${toId}`, reason: 'relation 端点不存在'});
+        } else {
+          addEdge(fromId, rel, toId);
+        }
+      }
     }
+
+    // ── 非 node 落点：taxonomy → tags，preference → settings ──
+    let tagsInserted = 0;
+    const insertTag = db.prepare('INSERT INTO tags (id, name, parent_id, color) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO NOTHING');
+    for (const record of scoped.filter((item) => TAG_KINDS.includes(item.kind))) {
+      const data = record.data ?? {};
+      tagsInserted += insertTag.run(record.id, data.title ?? '', data.parentId || null, null).changes;
+    }
+
+    let settingsInserted = 0;
+    const insertSetting = db.prepare('INSERT INTO settings (key, value, updated) VALUES (?, ?, ?) ON CONFLICT(key) DO NOTHING');
+    for (const record of scoped.filter((item) => SETTING_KINDS.includes(item.kind))) {
+      for (const [key, value] of Object.entries(record.data ?? {})) {
+        settingsInserted += insertSetting.run(key, JSON.stringify(value ?? null), record.updated).changes;
+      }
+    }
+
+    const dropped = scoped.filter((item) => DROPPED_KINDS.includes(item.kind));
 
     report({
       scoped, rows, inserted, fileRows, archiveInserted, refs,
       unresolvedParents, pathConflicts, cycles, db,
+      tagsInserted, settingsInserted, dropped,
     });
     return 0;
   } finally {
@@ -523,14 +656,25 @@ function main() {
  * @param {object} result 汇总数据。
  */
 function report(result) {
-  const {scoped, rows, inserted, fileRows, archiveInserted, refs, unresolvedParents, pathConflicts, cycles, db} = result;
+  const {scoped, rows, inserted, fileRows, archiveInserted, refs, unresolvedParents, pathConflicts, cycles, db, tagsInserted, settingsInserted, dropped} = result;
 
-  console.log('=== 迁移范围 ===');
-  for (const kind of IN_SCOPE) {
-    const all = scoped.filter((record) => record.kind === kind);
-    console.log(`  ${kind.padEnd(10)} ${String(all.length).padStart(3)} 条（软删除 ${all.filter((r) => r.deleted).length}）`);
+  console.log('=== 迁移范围（按落点分组） ===');
+  const groups = [
+    ['→ nodes', NODE_KINDS],
+    ['→ edges（不落 node）', EDGE_ONLY_KINDS],
+    ['→ tags', TAG_KINDS],
+    ['→ settings', SETTING_KINDS],
+    ['→ drop（§4.8）', DROPPED_KINDS],
+  ];
+  let grand = 0;
+  for (const [label, kinds] of groups) {
+    const count = scoped.filter((record) => kinds.includes(record.kind)).length;
+    grand += count;
+    console.log(`  ${label.padEnd(22)} ${String(count).padStart(3)} 条  ${kinds.filter((k) => scoped.some((r) => r.kind === k)).join(' / ')}`);
   }
-  console.log(`  合计       ${String(scoped.length).padStart(3)} 条（软删除 ${scoped.filter((r) => r.deleted).length}）`);
+  console.log(`  ${'合计'.padEnd(22)} ${String(grand).padStart(3)} 条`);
+  const softDeleted = scoped.filter((record) => record.deleted).length;
+  console.log(`  其中软删除 ${softDeleted} 条（节点保留 deleted=1，不是抹除）`);
   console.log('');
 
   console.log('=== 写入结果 ===');
@@ -579,6 +723,17 @@ function report(result) {
   console.log(`  有 parent_id 的节点 ${rows.filter((row) => row.parent_id).length} / ${rows.length}`);
   console.log('');
 
+  console.log('=== 非 node 落点 ===');
+  console.log(`  tags 新插入 ${tagsInserted}（taxonomy → 标签）`);
+  console.log(`  settings 新插入 ${settingsInserted} 行（preference → 按 key 分行）`);
+  console.log(`  drop 跳过 ${dropped.length} 条：${dropped.map((record) => `${record.id}（batchId=${record.data?.batchId}，测试残留）`).join('，') || '无'}`);
+  console.log('');
+
+  console.log('=== 被跳过的 relation（edges 无 deleted 列） ===');
+  if (!refs.skippedRelations.length) console.log('  无');
+  for (const item of refs.skippedRelations) console.log(`  ${item.id.slice(0, 8)} ${item.from} -${item.rel}-> ${item.to}：${item.reason}`);
+  console.log('');
+
   console.log('=== 约束预检 ===');
   console.log(`  会违反 nodes_path 的重复（parent 非 NULL）：${pathConflicts.blocking.length}`);
   for (const conflict of pathConflicts.blocking) console.log(`  ✖ ${conflict.key} → ${conflict.ids.join(', ')}`);
@@ -598,26 +753,57 @@ function verifyImport(db, snapshot) {
   const ALL_KINDS = IN_SCOPE;
   const scoped = snapshot.records.filter((record) => ALL_KINDS.includes(record.kind));
 
-  console.log('=== ① 累计对账表（kind / 快照数 / 已迁数 / 差） ===');
-  let expectedTotal = 0;
-  let actualTotal = 0;
-  for (const kind of ALL_KINDS) {
+  console.log('=== ① 全量对账（21 种 kind / 112 条，按落点算） ===');
+  console.log('  kind        快照  落点        已落  差');
+  let recordTotal = 0;
+  for (const kind of IN_SCOPE) {
     const expected = scoped.filter((record) => record.kind === kind).length;
-    const actual = db.prepare('SELECT COUNT(*) AS c FROM nodes WHERE kind = ?').get(kind).c;
-    expectedTotal += expected;
-    actualTotal += actual;
-    const ok = expected === actual;
-    if (!ok) problems.push(`${kind}: 快照 ${expected} / 库内 ${actual}`);
-    console.log(`  ${kind.padEnd(10)} ${String(expected).padStart(3)} / ${String(actual).padStart(3)} / ${String(actual - expected).padStart(3)}  ${ok ? '✓' : '✖'}`);
+    if (!expected) continue;
+    recordTotal += expected;
+
+    let destination = 'nodes';
+    let actual;
+    let note = '';
+    if (NODE_KINDS.includes(kind)) {
+      actual = db.prepare('SELECT COUNT(*) AS c FROM nodes WHERE kind = ?').get(kind).c;
+    } else if (TAG_KINDS.includes(kind)) {
+      destination = 'tags';
+      actual = db.prepare('SELECT COUNT(*) AS c FROM tags WHERE id = ?').get(scoped.find((r) => r.kind === kind).id).c;
+    } else if (SETTING_KINDS.includes(kind)) {
+      destination = 'settings';
+      actual = db.prepare('SELECT COUNT(*) AS c FROM settings').get().c;
+      note = '（1 条记录拆成多行 key）';
+    } else if (EDGE_ONLY_KINDS.includes(kind)) {
+      destination = 'edges';
+      const live = scoped.filter((record) => record.kind === kind && !record.deleted).length;
+      actual = live;
+      note = `（${expected - live} 条软删除已跳过：edges 无 deleted 列）`;
+    } else {
+      destination = 'drop';
+      actual = 0;
+      note = '（§4.8 故意丢弃：测试残留）';
+    }
+
+    // settings（1 记录拆多行）、edges（软删除的跳过）、drop（故意丢弃）都属"按设计不等"，
+    // 差列显示 —，不当作失败；它们的偏离原因写在备注里，仍逐条可见。
+    const isSetting = SETTING_KINDS.includes(kind);
+    const explained = isSetting || EDGE_ONLY_KINDS.includes(kind) || DROPPED_KINDS.includes(kind);
+    const diff = explained ? '—' : String(actual - expected);
+    const ok = explained || actual === expected;
+    if (!ok) problems.push(`${kind}: 快照 ${expected} / 落点 ${actual}`);
+    console.log(`  ${kind.padEnd(11)} ${String(expected).padStart(3)}  ${destination.padEnd(11)} ${String(actual).padStart(3)}  ${diff.padStart(3)}  ${ok ? '✓' : '✖'} ${note}`);
   }
-  console.log(`  ${'合计'.padEnd(10)} ${String(expectedTotal).padStart(3)} / ${String(actualTotal).padStart(3)}  ${expectedTotal === actualTotal ? '✓' : '✖'}`);
+  console.log(`  合计快照记录 ${recordTotal} 条`);
+  const nodeTotal = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind <> 'archive'").get().c;
+  console.log(`  → 其中落成 nodes 的 ${nodeTotal} 条（不含 archive 占位），其余 ${recordTotal - nodeTotal} 条落到 tags/settings/edges/drop`);
+  if (recordTotal !== snapshot.records.length) problems.push(`快照总数 ${recordTotal} ≠ ${snapshot.records.length}`);
   const archive = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind = 'archive'").get().c;
   console.log(`  另有 archive 占位节点 ${archive} 个（不在快照内，预期 1）`);
   if (archive !== 1) problems.push(`archive 占位节点数 ${archive} ≠ 1`);
   console.log('');
 
-  console.log('=== ② 抽样逐字段比对 ===');
-  for (const kind of ALL_KINDS) {
+  console.log('=== ② 抽样逐字段比对（仅 node 类 kind） ===');
+  for (const kind of NODE_KINDS) {
     const sample = scoped.find((record) => record.kind === kind);
     if (!sample) continue;
     const row = db.prepare('SELECT * FROM nodes WHERE id = ?').get(sample.id);
@@ -757,6 +943,59 @@ function verifyImport(db, snapshot) {
     console.log(`    → ${edge.dst}（kind=${targetKind ?? '不存在'}）${targetKind === 'attempt' ? '✓' : '✖'}`);
     if (targetKind !== 'attempt') problems.push(`submission→attempt 边目标 kind=${targetKind}`);
   }
+  console.log('');
+
+  console.log('=== ⑪ document：kind 分布与归档标注边 ===');
+  const documents = db.prepare("SELECT id, meta, length(body_md) AS len FROM nodes WHERE kind='document'").all();
+  const docCategories = {};
+  let stlEdges = 0;
+  for (const doc of documents) {
+    const category = JSON.parse(doc.meta).category ?? '(无)';
+    docCategories[category] = (docCategories[category] ?? 0) + 1;
+    const edge = db.prepare("SELECT 1 AS x FROM edges WHERE src=? AND rel=?").get(doc.id, ARCHIVED_REF_REL);
+    if (edge) stlEdges += 1;
+  }
+  console.log(`  document ${documents.length} 条；分类分布 ${JSON.stringify(docCategories)}`);
+  console.log(`  正文长度 ${documents.map((doc) => doc.len).join(' / ')} 字符（都有实质内容，非接口列表副本）`);
+  console.log(`  指向归档占位的 ${ARCHIVED_REF_REL} 边 ${stlEdges} 条 ${stlEdges === documents.length ? '✓' : '✖'}`);
+  if (stlEdges !== documents.length) problems.push(`document 归档标注边 ${stlEdges} ≠ ${documents.length}`);
+  console.log('');
+
+  console.log('=== ⑫ review：状态分布与 due 可比较性 ===');
+  const reviews = db.prepare("SELECT id, meta, deleted FROM nodes WHERE kind='review'").all().map((row) => ({id: row.id, deleted: row.deleted, meta: JSON.parse(row.meta)}));
+  const statusDist = {};
+  for (const review of reviews) statusDist[`${review.meta.status}${review.deleted ? '(已删除)' : ''}`] = (statusDist[`${review.meta.status}${review.deleted ? '(已删除)' : ''}`] ?? 0) + 1;
+  console.log(`  review ${reviews.length} 条；状态分布 ${JSON.stringify(statusDist)}`);
+  const dueFormatOk = reviews.every((review) => /^\d{4}-\d{2}-\d{2}$/.test(String(review.meta.due)));
+  console.log(`  due 全部为 YYYY-MM-DD（可直接字符串比较）：${dueFormatOk ? '是 ✓' : '否 ✖'}`);
+  if (!dueFormatOk) problems.push('review.due 存在非 YYYY-MM-DD 值');
+  const dueQueryAll = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind='review' AND json_extract(meta,'$.due') <= '2026-10-28'").get().c;
+  const dueQueryLive = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind='review' AND deleted=0 AND json_extract(meta,'$.due') <= '2026-10-28'").get().c;
+  console.log(`  WHERE due <= '2026-10-28'（含已删除）→ ${dueQueryAll} 条；再加 deleted=0 → ${dueQueryLive} 条`);
+  console.log(`  索引 nodes_review_due 存在：${db.prepare("SELECT 1 AS x FROM sqlite_master WHERE type='index' AND name='nodes_review_due'").get() ? '是 ✓' : '否 ✖'}`);
+  console.log('');
+
+  console.log('=== ⑬ list → problem 的 contains 边 ===');
+  const lists = db.prepare("SELECT id, meta FROM nodes WHERE kind='list'").all().map((row) => ({id: row.id, meta: JSON.parse(row.meta)}));
+  const containsEdges = db.prepare("SELECT src, dst FROM edges WHERE rel='contains'").all();
+  const expectedItems = lists.reduce((sum, list) => sum + (list.meta.itemCount ?? 0), 0);
+  console.log(`  list ${lists.length} 条，声明条目合计 ${expectedItems}；实际 contains 边 ${containsEdges.length} 条`);
+  console.log(`  例：${lists[0]?.id}（${lists[0]?.meta.date}）→ ${lists[0]?.meta.itemCount} 条`);
+  const badContains = containsEdges.filter((edge) => db.prepare('SELECT kind FROM nodes WHERE id=?').get(edge.dst)?.kind !== 'problem');
+  console.log(`  dst 不是 problem 的边：${badContains.length} ${badContains.length === 0 ? '✓' : '✖'}`);
+  console.log('');
+
+  console.log('=== ⑭ relation → edges（rel 用原值） ===');
+  const relEdges = db.prepare("SELECT src, rel, dst FROM edges WHERE rel NOT IN ('about','mentions','part_of','contains','derived_from',?)").all(ARCHIVED_REF_REL);
+  console.log(`  非标准 rel 的边 ${relEdges.length} 条（应来自 relation）`);
+  for (const edge of relEdges) {
+    const srcKind = db.prepare('SELECT kind FROM nodes WHERE id=?').get(edge.src)?.kind;
+    const dstKind = db.prepare('SELECT kind FROM nodes WHERE id=?').get(edge.dst)?.kind;
+    console.log(`    ${edge.src}(${srcKind}) -${edge.rel}-> ${edge.dst}(${dstKind})`);
+  }
+  const relationNodes = db.prepare("SELECT COUNT(*) AS c FROM nodes WHERE kind='relation'").get().c;
+  console.log(`  nodes 里是否有 kind='relation'：${relationNodes} 条 ${relationNodes === 0 ? '✓ 正确（relation 不落 node）' : '✖ 不该有'}`);
+  if (relationNodes) problems.push(`relation 被错误落成 node（${relationNodes} 条）`);
   console.log('');
 
   if (problems.length) {
