@@ -26,6 +26,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# v2 本地数据库（可由 v2/db/migrate-0001.mjs 重建，含 WAL/SHM 临时文件）
+/v2/data/
+
 # Local environment and keys
 .env*
 .dev.vars*
